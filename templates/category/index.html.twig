@@ -1,0 +1,40 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Catégories{% endblock %}
+
+{% block body %}
+    <h1>Liste des catégories</h1>
+    <a href="{{ path('app_category_new') }}" class="btn btn-success mb-3">Ajouter une catégorie</a>
+
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Nom</th>
+            <th>Description</th>
+            <th>Image</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for category in categories %}
+            <tr>
+                <td>{{ category.name }}</td>
+                <td>{{ category.description }}</td>
+                <td>
+                    {% if category.image %}
+                        <img src="{{ asset('images/' ~ category.image) }}" alt="{{ category.name }}" style="width: 100px;">
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ path('app_category_products', {'id': category.id}) }}" class="btn btn-info btn-sm">Voir les produits</a>
+                    <a href="{{ path('app_category_edit', {'id': category.id}) }}" class="btn btn-primary btn-sm">Modifier</a>
+                    <form method="post" action="{{ path('app_category_delete', {'id': category.id}) }}" style="display:inline-block;">
+                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ category.id) }}">
+                        <button class="btn btn-danger btn-sm">Supprimer</button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

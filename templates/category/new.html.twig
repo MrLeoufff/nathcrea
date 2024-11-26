@@ -1,0 +1,14 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ form.vars.value.id ? 'Modifier une catégorie' : 'Nouvelle catégorie' }}{% endblock %}
+
+{% block body %}
+    <h1>{{ form.vars.value.id ? 'Modifier une catégorie' : 'Nouvelle catégorie' }}</h1>
+
+    {{ form_start(form) }}
+    {{ form_row(form.name) }}
+    {{ form_row(form.description) }}
+    {{ form_row(form.imageFile) }}
+    <button class="btn btn-primary">{{ form.vars.value.id ? 'Modifier' : 'Créer' }}</button>
+    {{ form_end(form) }}
+{% endblock %}

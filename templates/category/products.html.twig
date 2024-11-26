@@ -1,0 +1,27 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Produits de {{ category.name }}{% endblock %}
+
+{% block body %}
+    <h1>Produits dans la catégorie {{ category.name }}</h1>
+    <a href="{{ path('app_categories') }}" class="btn btn-secondary mb-3">Retour aux catégories</a>
+    <div class="row">
+        {% for product in products %}
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    {% if product.image %}
+                        <img src="{{ asset('images/' ~ product.image) }}" class="card-img-top" alt="{{ product.name }}">
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ product.name }}</h5>
+                        <p class="card-text">{{ product.description }}</p>
+                        <p class="card-text"><strong>Prix :</strong> {{ product.price }} €</p>
+                        <p class="card-text"><strong>Stock :</strong> {{ product.stock }}</p>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <p>Aucun produit dans cette catégorie.</p>
+        {% endfor %}
+    </div>
+{% endblock %}

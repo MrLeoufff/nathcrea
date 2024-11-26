@@ -1,0 +1,242 @@
+html, body {
+    height: 100%;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.container {
+    flex: 1;
+}
+
+/* Navbar */
+.navbar {
+    background-color: #2E2E38; /* Couleur sombre pour la navbar */
+    border-bottom: 3px solid #D4AF37; /* Ligne dorée sous la navbar */
+}
+
+.navbar-brand img {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%; /* Logo circulaire */
+    box-shadow: 0 0 5px #D4AF37; /* Légère lueur dorée */
+}
+
+.navbar-nav .nav-link {
+    color: #F5F5F5; /* Blanc cassé pour les liens */
+    font-size: 1.1rem;
+    font-weight: bold;
+    transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.navbar-nav .nav-link:hover {
+    color: #69C9D0; /* Bleu clair au survol */
+    transform: scale(1.1); /* Effet de zoom */
+}
+
+.navbar-toggler {
+    border: none;
+    color: #D4AF37; /* Icône dorée pour le menu burger */
+}
+
+.navbar-toggler-icon {
+    background-color: #D4AF37; /* Couleur dorée pour le menu burger */
+}
+
+.collapse .nav-item.active .nav-link {
+    color: #D4AF37; /* Doré pour le lien actif */
+}
+
+/* Section Bienvenue */
+.welcome-section {
+    background-color: #2E2E38; /* Couleur sombre inspirée du logo */
+    color: #F5F5F5; /* Texte clair */
+    padding: 5rem 0;
+}
+
+.welcome-title {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: #69C9D0; /* Bleu clair inspiré du logo */
+}
+
+.welcome-text {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+}
+
+.welcome-section .btn {
+    background-color: #D4AF37; /* Doré inspiré du logo */
+    color: #2E2E38;
+    font-weight: bold;
+    border: none;
+    padding: 0.8rem 2rem;
+    transition: background-color 0.3s ease;
+}
+
+.welcome-section .btn:hover {
+    background-color: #E5C869; /* Doré clair au survol */
+}
+
+/* Section Services */
+.services-section {
+    background-color: #F5F5F5; /* Fond clair */
+    color: #2E2E38; /* Texte sombre */
+    padding: 4rem 0;
+}
+
+.service-box {
+    padding: 2rem;
+    border: 2px solid #D4AF37;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.service-box i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: #69C9D0;
+}
+
+.service-box:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Cartes de catégories */
+.category-card {
+    border: 2px solid #D4AF37; /* Bordure dorée */
+    border-radius: 15px;
+    background-color: #FFF; /* Fond blanc */
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Ombre légère */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.category-card:hover {
+    transform: scale(1.05); /* Agrandissement au survol */
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); /* Accentuation de l'ombre */
+}
+
+/* Image des catégories */
+.category-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-bottom: 2px solid #D4AF37; /* Ligne dorée sous l'image */
+}
+
+/* Informations des catégories */
+.category-info {
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.category-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #2E2E38;
+    margin-bottom: 1rem;
+}
+
+.category-description {
+    font-size: 1rem;
+    color: #555; /* Texte gris */
+    margin-bottom: 1.5rem;
+}
+
+/* Boutons Voir Plus */
+.category-info .btn {
+    background-color: #69C9D0; /* Bleu clair inspiré du logo */
+    color: #FFF;
+    font-weight: bold;
+    padding: 0.8rem 1.5rem;
+    border: none;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.category-info .btn:hover {
+    background-color: #57AEB8; /* Bleu légèrement plus sombre */
+    transform: scale(1.1);
+}
+
+/* Section À propos de moi */
+.about-me-section {
+    background-color: #F5F5F5; /* Fond clair */
+    padding: 4rem 0;
+}
+
+.about-me-img {
+    width: 80%;
+    max-width: 300px;
+    border-radius: 50%; /* Image circulaire */
+    border: 5px solid #D4AF37; /* Bordure dorée */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); /* Ombre subtile */
+}
+
+.about-me-text {
+    font-size: 1.2rem;
+    line-height: 1.8;
+    color: #2E2E38; /* Texte sombre */
+    margin-bottom: 1.5rem;
+}
+
+.about-me-section .btn {
+    background-color: #D4AF37; /* Doré pour le bouton */
+    color: #2E2E38;
+    font-weight: bold;
+    border: none;
+    padding: 0.8rem 2rem;
+    transition: background-color 0.3s ease;
+}
+
+.about-me-section .btn:hover {
+    background-color: #E5C869; /* Doré clair au survol */
+}
+
+
+/* Footer */
+.footer {
+    background-color: #2E2E38;
+    color: #F5F5F5;
+    text-align: center;
+    padding: 1rem;
+    position: relative;
+    bottom: 0;
+    width: 100%;
+}
+
+.footer .footer-text {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    color: #E0E0E0;
+}
+
+.social-links {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+}
+
+.social-icon {
+    color: #F5F5F5;
+    font-size: 1.5rem;
+    transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.social-icon:hover {
+    transform: scale(1.2);
+}
+
+.social-icon.facebook:hover {
+    color: #4267B2; /* Bleu de Facebook */
+}
+
+.social-icon.tiktok:hover {
+    color: #69C9D0; /* Bleu clair de TikTok */
+}
+
+.social-icon.instagram:hover {
+    color: #C13584; /* Rose d'Instagram */
+}
