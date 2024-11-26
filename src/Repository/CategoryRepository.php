@@ -16,6 +16,19 @@ class CategoryRepository extends ServiceEntityRepository
         parent::__construct($registry, Category::class);
     }
 
+    public function findTopCategories(): array
+    {
+        return $this->createQueryBuilder('c')
+            ->select('c', 'COUNT(p.id) as productCount')
+            ->leftJoin('c.products', 'p')
+            ->groupBy('c.id')
+            ->orderBy('productCount', 'DESC')
+            ->setMaxResults(5)
+            ->getQuery()
+            ->getResult();
+    }
+
+
     //    /**
     //     * @return Category[] Returns an array of Category objects
     //     */

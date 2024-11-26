@@ -1,0 +1,39 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Dashboard Admin{% endblock %}
+
+{% block body %}
+    <div class="container mt-4">
+        <h1 class="mb-4">Dashboard Administrateur</h1>
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card text-white bg-primary mb-3">
+                    <div class="card-header">Utilisateurs</div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ users|length }}</h5>
+                        <p class="card-text">Nombre total d'utilisateurs inscrits.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-success mb-3">
+                    <div class="card-header">Catégories</div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ categories|length }}</h5>
+                        <p class="card-text">Nombre total de catégories disponibles.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-warning mb-3">
+                    <div class="card-header">Produits</div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ products|length }}</h5>
+                        <p class="card-text">Nombre total de produits ajoutés.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
