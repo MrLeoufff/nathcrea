@@ -16,11 +16,11 @@ class Order
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $orderNumber = null;
+    #[ORM\Column(length: 255, unique: true)]
+    private ?string $orderNumber;
 
     #[ORM\Column(length: 50)]
-    private ?string $status = null;
+    private ?string $status = 'pending';
 
     #[ORM\Column]
     private ?float $totalAmount = null;
@@ -47,24 +47,24 @@ class Order
         return $this->id;
     }
 
-    public function getOrderNumber(): ?string
+    public function getOrderNumber(): string
     {
         return $this->orderNumber;
     }
 
-    public function setOrderNumber(string $orderNumber): static
+    public function setOrderNumber(string $orderNumber): self
     {
         $this->orderNumber = $orderNumber;
 
         return $this;
     }
 
-    public function getStatus(): ?string
+    public function getStatus(): string
     {
         return $this->status;
     }
 
-    public function setStatus(string $status): static
+    public function setStatus(string $status): self
     {
         $this->status = $status;
 

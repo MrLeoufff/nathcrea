@@ -10,12 +10,12 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
+#[Route('/admin')]
 class CategoryController extends AbstractController
 {
     #[Route('/categories', name: 'app_categories')]
     public function index(EntityManagerInterface $entityManager): Response
     {
-        // Récupère toutes les catégories
         $categories = $entityManager->getRepository(Category::class)->findAll();
 
         return $this->render('category/index.html.twig', [

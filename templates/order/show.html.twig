@@ -1,0 +1,10 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Commande{% endblock %}
+
+{% block body %}
+    <h1>Commande créée</h1>
+
+    <p><strong>Numéro de commande :</strong> {{ order.orderNumber }}</p>
+    <p><strong>Statut :</strong> {{ order.status }}</p>
+{% endblock %}
