@@ -6,7 +6,6 @@ use App\Entity\Product;
 use App\Service\CartService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -75,4 +74,56 @@ class CartController extends AbstractController
 
         return $this->redirectToRoute('cart_index');
     }
+
+    #[Route('/validate', name: 'cart_validate')]
+    public function validateCart(EntityManagerInterface $entityManager, \App\Service\PayPalService $payPalService): Response
+    {
+        // Récupérer les articles du panier
+        $cartItems = $this->cartService->getCartItems($entityManager);
+        $total = $this->cartService->getTotal($entityManager);
+
+        if (empty($cartItems)) {
+            $this->addFlash('error', 'Votre panier est vide.');
+            return $this->redirectToRoute('cart_index');
+        }
+
+        // Construire les données pour PayPal
+        $purchaseUnits = [];
+        foreach ($cartItems as $item) {
+            $purchaseUnits[] = [
+                'description' => $item['product']->getName(),
+                'amount' => [
+                    'currency_code' => 'EUR', // Remplacez par la devise de votre choix
+                    'value' => number_format($item['product']->getPrice(), 2, '.', ''), // Format correct pour PayPal
+                ],
+            ];
+        }
+
+        $orderData = [
+            'intent' => 'CAPTURE',
+            'purchase_units' => $purchaseUnits,
+            'application_context' => [
+                'cancel_url' => $this->generateUrl('cart_index', [], 0),
+                'return_url' => $this->generateUrl('cart_payment_success', [], 0),
+            ],
+        ];
+
+        try {
+            // Création de la commande via le service PayPal
+            $client = $payPalService->getClient();
+            $request = new \PayPalCheckoutSdk\Orders\OrdersCreateRequest();
+            $request->prefer('return=representation');
+            $request->body = $orderData;
+
+            $response = $client->execute($request);
+            $orderId = $response->result->id;
+
+            // Redirection vers PayPal
+            return $this->redirect("https://www.sandbox.paypal.com/checkoutnow?token=$orderId");
+        } catch (\Exception $e) {
+            $this->addFlash('error', 'Erreur lors de la validation du panier : ' . $e->getMessage());
+            return $this->redirectToRoute('cart_index');
+        }
+    }
+
 }

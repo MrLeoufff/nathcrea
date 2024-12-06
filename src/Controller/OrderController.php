@@ -2,7 +2,6 @@
 
 namespace App\Controller;
 
-use App\Entity\Product;
 use App\Service\OrderService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -31,5 +30,13 @@ class OrderController extends AbstractController
         $this->addFlash('success', "Commande créée avec succès : {$order->getOrderNumber()}");
 
         return $this->redirectToRoute('cart_index');
+    }
+
+    #[Route('/order/confirmation/{orderId}', name: 'app_order_confirmation')]
+    public function orderConfirmation(string $orderId): Response
+    {
+        return $this->render('order/confirmation.html.twig', [
+            'orderId' => $orderId,
+        ]);
     }
 }
