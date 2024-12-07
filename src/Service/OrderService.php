@@ -39,6 +39,11 @@ class OrderService
      */
     private function generateOrderNumber(): string
     {
-        return 'ORDER_' . strtoupper(uniqid());
+        do {
+            $orderNumber = 'ORDER_' . strtoupper(uniqid());
+        } while ($this->entityManager->getRepository(Order::class)->findOneBy(['orderNumber' => $orderNumber]));
+
+        return $orderNumber;
     }
+
 }

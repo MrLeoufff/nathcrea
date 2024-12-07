@@ -2,7 +2,9 @@
 
 namespace App\Controller;
 
+use App\Entity\Order;
 use App\Service\OrderService;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -29,14 +31,21 @@ class OrderController extends AbstractController
 
         $this->addFlash('success', "Commande créée avec succès : {$order->getOrderNumber()}");
 
-        return $this->redirectToRoute('cart_index');
+        return $this->redirectToRoute('app_categories');
     }
 
     #[Route('/order/confirmation/{orderId}', name: 'app_order_confirmation')]
-    public function orderConfirmation(string $orderId): Response
+    public function orderConfirmation(EntityManagerInterface $entityManager, int $orderId): Response
     {
+        $order = $entityManager->getRepository(Order::class)->find($orderId);
+
+        if (!$order) {
+            throw $this->createNotFoundException("La commande avec l'ID {$orderId} est introuvable.");
+        }
+
         return $this->render('order/confirmation.html.twig', [
-            'orderId' => $orderId,
+            'orderNumber' => $order->getOrderNumber(),
+            'order' => $order,
         ]);
     }
 }

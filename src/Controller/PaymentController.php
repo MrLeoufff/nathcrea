@@ -2,12 +2,17 @@
 
 namespace App\Controller;
 
+use App\Entity\Order;
+use App\Entity\OrderItem;
 use App\Service\CartService;
 use App\Service\PayPalService;
+use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Uid\Uuid;
 
 class PaymentController extends AbstractController
 {
@@ -53,17 +58,38 @@ class PaymentController extends AbstractController
     }
 
     #[Route('/payment', name: 'app_payment')]
-    public function createPayment(): Response
+    public function createPayment(EntityManagerInterface $entityManager, LoggerInterface $logger): Response
     {
+        $cartSummary = $this->cartService->getCartSummary($entityManager);
+        $logger->info('Cart Summary: ' . json_encode($cartSummary));
+
+        // Construire les données de la commande pour PayPal
         $orderData = [
             'intent' => 'CAPTURE',
             'purchase_units' => [
                 [
-                    'description' => 'Achat de test',
+                    'description' => 'Votre panier',
                     'amount' => [
                         'currency_code' => 'EUR',
-                        'value' => '50.00',
+                        'value' => $cartSummary['total'], // Total global
+                        'breakdown' => [
+                            'item_total' => [
+                                'currency_code' => 'EUR',
+                                'value' => $cartSummary['total'], // Total des articles
+                            ],
+                        ],
                     ],
+                    'items' => array_map(function ($item) {
+                        return [
+                            'name' => $item['product']->getName(),
+                            'description' => $item['product']->getDescription(),
+                            'unit_amount' => [
+                                'currency_code' => 'EUR',
+                                'value' => number_format($item['product']->getPrice(), 2, '.', ''),
+                            ],
+                            'quantity' => $item['quantity'],
+                        ];
+                    }, $this->cartService->getCartItems($entityManager)),
                 ],
             ],
             'application_context' => [
@@ -72,12 +98,7 @@ class PaymentController extends AbstractController
             ],
         ];
 
-        try {
-            $this->validateOrderData($orderData);
-        } catch (\InvalidArgumentException $e) {
-            $this->addFlash('error', 'Données de commande invalides : ' . $e->getMessage());
-            return $this->redirectToRoute('cart_index');
-        }
+        $logger->info('PayPal Order Data: ' . json_encode($orderData));
 
         try {
             $client = $this->payPalService->getClient();
@@ -86,52 +107,108 @@ class PaymentController extends AbstractController
             $request->body = $orderData;
 
             $response = $client->execute($request);
-            $orderId = $response->result->id;
 
-            return $this->redirect("https://www.sandbox.paypal.com/checkoutnow?token=$orderId");
-        } catch (\Exception $e) {
-            $this->addFlash('error', 'Erreur PayPal : ' . $e->getMessage());
-            return $this->redirectToRoute('app_payment_error');
-        }
-    }
+            // Logguez la réponse
+            dump($response);
 
-    #[Route('/payment/success', name: 'cart_payment_success')]
-    public function paymentSuccess(Request $request): Response
-    {
-        $orderId = $request->query->get('token'); // Récupère le token de commande PayPal
-
-        if (!$orderId) {
-            $this->addFlash('error', 'Aucun identifiant de commande trouvé.');
-            return $this->redirectToRoute('cart_index');
-        }
-
-        try {
-            // Récupération du client PayPal
-            $client = $this->payPalService->getClient();
-
-            // Validation de la commande avec PayPal
-            $captureRequest = new \PayPalCheckoutSdk\Orders\OrdersCaptureRequest($orderId);
-            $captureRequest->prefer('return=representation');
-
-            $response = $client->execute($captureRequest);
-
-            if ($response->statusCode === 201 && $response->result->status === 'COMPLETED') {
-                // Paiement validé
-                $this->cartService->cleanCart(); // Vide le panier
-                $this->addFlash('success', 'Votre paiement a été validé avec succès.');
-                return $this->redirectToRoute('app_order_confirmation', [
-                    'orderId' => $orderId,
-                ]);
-            } else {
-                // Le paiement n'est pas validé
-                $this->addFlash('error', 'Le paiement n\'a pas été validé.');
+            if (isset($response->result->id)) {
+                $orderId = $response->result->id;
+                return $this->redirect("https://www.sandbox.paypal.com/checkoutnow?token=$orderId");
             }
         } catch (\Exception $e) {
-            // Gestion des erreurs
-            $this->addFlash('error', 'Erreur lors de la validation du paiement : ' . $e->getMessage());
+            $this->addFlash('error', 'Erreur PayPal : ' . $e->getMessage());
+
+            // Logguez les détails de l'erreur
+            dump($e->getMessage());
+            dump($e->getTraceAsString());
         }
 
         return $this->redirectToRoute('cart_index');
+    }
+
+    #[Route('/payment/success', name: 'cart_payment_success')]
+    public function paymentSuccess(
+        EntityManagerInterface $entityManager,
+        Request $request,
+        PayPalService $payPalService,
+        LoggerInterface $logger
+    ): Response {
+        $orderId = $request->query->get('token');
+        if (!$orderId) {
+            $this->addFlash('error', 'Identifiant de commande introuvable.');
+            return $this->redirectToRoute('cart_index');
+        }
+
+        $logger->info('Traitement du paiement pour la commande PayPal : ' . $orderId);
+
+        try {
+            $client = $payPalService->getClient();
+            $captureRequest = new \PayPalCheckoutSdk\Orders\OrdersCaptureRequest($orderId);
+            $captureRequest->prefer('return=representation');
+            $response = $client->execute($captureRequest);
+            $logger->info('Réponse PayPal reçue : ' . json_encode($response->result));
+
+            if ($response->result->status === 'COMPLETED') {
+                // Créez une nouvelle commande
+                $order = new Order();
+                $order->setOrderNumber(Uuid::v4()->toRfc4122());
+                $order->setPaypalOrderId($response->result->id);
+                $order->setStatus($response->result->status);
+                $order->setTotalAmount(array_sum(array_map(
+                    fn($unit) => (float) $unit->amount->value,
+                    $response->result->purchase_units
+                )));
+                $order->setUser($this->getUser());
+                $entityManager->persist($order);
+
+                // Ajouter les articles à la commande
+                foreach ($response->result->purchase_units as $unit) {
+                    // Vérifier les données obligatoires
+                    if (!isset($unit->description) || !isset($unit->amount->value)) {
+                        throw new \Exception('Données manquantes pour l\'article : ' . json_encode($unit));
+                    }
+
+                    // Récupérer la quantité à partir des données de la session
+                    $cartItems = $this->cartService->getCartItems($entityManager);
+                    $cartItem = array_filter($cartItems, function ($item) use ($unit) {
+                        return $item['product']->getName() === $unit->description;
+                    });
+
+                    if (empty($cartItem)) {
+                        throw new \Exception('Impossible de trouver l\'article correspondant dans le panier : ' . $unit->description);
+                    }
+
+                    $quantity = (int) $cartItem[array_key_first($cartItem)]['quantity'];
+
+                    $orderItem = new OrderItem();
+                    $orderItem->setProductName($unit->description);
+                    $orderItem->setQuantity($quantity);
+                    $orderItem->setUnitPrice((float) $unit->amount->value / $quantity);
+                    $orderItem->setTotalPrice((float) $unit->amount->value);
+                    $orderItem->setOrderRef($order);
+                    $entityManager->persist($orderItem);
+                }
+
+                try {
+                    $entityManager->flush();
+                    $this->cartService->cleanCart();
+                    $logger->info('Commande enregistrée et panier vidé.');
+                } catch (\Exception $e) {
+                    $logger->error('Erreur lors du flush : ' . $e->getMessage());
+                    $this->addFlash('error', 'Erreur lors de l\'enregistrement en BDD.');
+                    return $this->redirectToRoute('cart_index');
+                }
+
+                $this->addFlash('success', 'Votre paiement a été validé avec succès.');
+                return $this->redirectToRoute('app_order_confirmation', ['orderId' => $order->getId()]);
+            }
+
+            throw new \Exception("Le paiement n'a pas été complété.");
+        } catch (\Exception $e) {
+            $logger->error('Erreur lors du traitement du paiement : ' . $e->getMessage());
+            $this->addFlash('error', 'Erreur lors de la validation du paiement : ' . $e->getMessage());
+            return $this->redirectToRoute('cart_index');
+        }
     }
 
     #[Route('/payment/cancel', name: 'cart_payment_cancel')]

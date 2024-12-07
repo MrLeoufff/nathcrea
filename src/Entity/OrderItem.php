@@ -17,7 +17,16 @@ class OrderItem
     private ?int $quantity = null;
 
     #[ORM\Column]
-    private ?float $price = null;
+    private ?float $unitPrice = null;
+
+    #[ORM\Column]
+    private ?float $totalPrice = null;
+
+    #[ORM\Column(type: 'float', nullable: true)]
+    private ?float $paypalFee = null;
+
+    #[ORM\Column(type: 'string', length: 255)]
+    private ?string $productName = null;
 
     #[ORM\ManyToOne(inversedBy: 'orderItems')]
     private ?Product $product = null;
@@ -42,14 +51,14 @@ class OrderItem
         return $this;
     }
 
-    public function getPrice(): ?float
+    public function getUnitPrice(): ?float
     {
-        return $this->price;
+        return $this->unitPrice;
     }
 
-    public function setPrice(float $price): static
+    public function setUnitPrice(float $unitPrice): static
     {
-        $this->price = $price;
+        $this->unitPrice = $unitPrice;
 
         return $this;
     }
@@ -74,6 +83,50 @@ class OrderItem
     public function setOrderRef(?Order $orderRef): static
     {
         $this->orderRef = $orderRef;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of totalPrice
+     */
+    public function getTotalPrice()
+    {
+        return $this->totalPrice;
+    }
+
+    /**
+     * Set the value of totalPrice
+     *
+     * @return  self
+     */
+    public function setTotalPrice($totalPrice)
+    {
+        $this->totalPrice = $totalPrice;
+
+        return $this;
+    }
+
+    public function getPaypalFee(): ?float
+    {
+        return $this->paypalFee;
+    }
+
+    public function setPaypalFee(?float $paypalFee): self
+    {
+        $this->paypalFee = $paypalFee;
+
+        return $this;
+    }
+
+    public function getProductName(): ?string
+    {
+        return $this->productName;
+    }
+
+    public function setProductName(string $productName): self
+    {
+        $this->productName = $productName;
 
         return $this;
     }

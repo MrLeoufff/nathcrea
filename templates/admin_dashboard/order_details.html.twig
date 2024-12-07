@@ -1,15 +1,28 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Confirmation de commande
+{% block title %}Détails de la commande #{{ order.id }}
 {% endblock %}
 
 {% block body %}
-	<h1>Merci pour votre commande !</h1>
-	<p>Votre paiement a été validé avec succès. Voici les détails de votre commande :</p>
-	<ul>
-		<li>Numéro de commande :
-			{{ orderNumber }}</li>
-	</ul>
+	<h1>Détails de la commande #{{ order.id }}</h1>
+
+	<section>
+		<p>
+			<strong>Client :</strong>
+			{{ order.user.email }}</p>
+		<p>
+			<strong>Date :</strong>
+			{{ order.createdAt|date('d/m/Y H:i') }}</p>
+		<p>
+			<strong>Total :</strong>
+			{{ order.totalAmount }}
+			€</p>
+		<p>
+			<strong>Status :</strong>
+			{{ order.status }}</p>
+	</section>
+
+	<h2>Articles</h2>
 	<table>
 		<thead>
 			<tr>
@@ -32,6 +45,4 @@
 			{% endfor %}
 		</tbody>
 	</table>
-
-	<a href="{{ path('app_home') }}" class="btn btn-primary">Retour à l'accueil</a>
 {% endblock %}

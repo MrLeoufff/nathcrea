@@ -28,6 +28,9 @@ class Order
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
+    #[ORM\Column(length : 255, nullable: true)]
+    private ?string $paypalOrderId = null;
+
     #[ORM\ManyToOne(inversedBy: 'orders')]
     private ?User $user = null;
 
@@ -40,6 +43,7 @@ class Order
     public function __construct()
     {
         $this->orderItems = new ArrayCollection();
+        $this->createdAt = new \DateTimeImmutable();
     }
 
     public function getId(): ?int
@@ -91,6 +95,18 @@ class Order
     public function setCreatedAt(\DateTimeImmutable $createdAt): static
     {
         $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function getPaypalOrderId(): ?string
+    {
+        return $this->paypalOrderId;
+    }
+
+    public function setPaypalOrderId(?string $paypalOrderId): self
+    {
+        $this->paypalOrderId = $paypalOrderId;
 
         return $this;
     }

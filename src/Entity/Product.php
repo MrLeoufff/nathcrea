@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\ProductRepository;
+use Assert\Positive;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -26,6 +27,8 @@ class Product
     private ?string $image = null;
 
     #[ORM\Column]
+    #[Positive(message: 'Le prix doit être supérieur à 0.')]
+    #[Assert\Type(type: 'float', message: 'Le prix doit être un nombre décimal.')]
     private ?float $price = null;
 
     #[ORM\Column]
@@ -34,7 +37,7 @@ class Product
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
-    #[ORM\ManyToOne(inversedBy: 'products')]
+    #[ORM\ManyToOne(inversedBy : 'products')]
     private ?Category $category = null;
 
     /**
@@ -98,7 +101,7 @@ class Product
 
     public function getPrice(): ?float
     {
-        return $this->price;
+        return $this->price !== null ? (float) $this->price : null;
     }
 
     public function setPrice(float $price): static

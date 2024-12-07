@@ -35,7 +35,6 @@ class CartService
 
     }
 
-
     public function getCartItems(EntityManagerInterface $entityManager): array
     {
         $cart = $this->session->get('cart', []);
@@ -54,7 +53,6 @@ class CartService
 
         return $cartItems;
     }
-
 
     public function removeFromCart(Product $product): void
     {
@@ -75,31 +73,55 @@ class CartService
 
     public function getTotal(EntityManagerInterface $entityManager): float
     {
-        $cartItems = $this->getCartItems($entityManager);
+        $summary = $this->getCartSummary($entityManager);
+        return $summary['total'];
+    }
+
+    public function getCartSummary(EntityManagerInterface $entityManager): array
+    {
+        $cart = $this->getCart();
+        $cartItems = [];
         $total = 0;
 
-        foreach ($cartItems as $item) {
-            if (!is_object($item['product']) || !method_exists($item['product'], 'getPrice')) {
-                throw new \LogicException('Invalid product in cart item: ' . json_encode($item));
-            }
-            if (!is_int($item['quantity'])) {
-                throw new \LogicException('Invalid quantity in cart item: ' . json_encode($item));
+        foreach ($cart as $productId => $quantity) {
+            $product = $entityManager->getRepository(Product::class)->find($productId);
+
+            if ($product && $quantity > 0) {
+                $price = (float) $product->getPrice();
+
+                if (!is_numeric($price)) {
+                    throw new \LogicException(sprintf('Le prix du produit ID %d n\'est pas valide : %s', $product->getId(), json_encode($price)));
+                }
+
+                $cartItems[] = [
+                    'name' => $product->getName(),
+                    'description' => substr($product->getDescription(), 0, 127), // Limite PayPal
+                    'unit_amount' => [
+                        'currency_code' => 'EUR',
+                        'value' => number_format((float) $price, 2, '.', ''), // Assurez-vous que le prix est un float
+                    ],
+                    'quantity' => (int) $quantity,
+                ];
+
+                $total += (float) $price * (int) $quantity;
             }
 
-            $total += $item['product']->getPrice() * $item['quantity'];
         }
 
-        return $total;
+        dump([
+            'items' => $cartItems,
+            'total' => $total,
+        ]);
+
+        return [
+            'items' => $cartItems,
+            'total' => number_format($total, 2, '.', ''), // Format PayPal
+        ];
     }
 
     public function cleanCart(): void
     {
-        $cart = $this->session->get('cart', []);
-        foreach ($cart as $productId => $quantity) {
-            if (!is_int($quantity) || $quantity <= 0) {
-                unset($cart[$productId]);
-            }
-        }
         $this->session->remove('cart');
     }
+
 }
