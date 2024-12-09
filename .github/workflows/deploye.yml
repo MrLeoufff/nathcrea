@@ -1,0 +1,27 @@
+name: Deploy to Raspberry Pi
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Deploy to Raspberry Pi using sshpass
+        run: |
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_IP }} "
+            cd /var/www/nathcrea &&
+            git pull origin main &&
+            composer install --no-interaction --prefer-dist --optimize-autoloader &&
+            php bin/console cache:clear --env=prod &&
+            sudo systemctl restart nginx
+            "
