@@ -32,6 +32,38 @@
 			{% endfor %}
 		</tbody>
 	</table>
+	<li class="list-group-item">
+		<strong>Status :</strong>
+		{% if is_granted('ROLE_ADMIN') %}
+			<form method="post" action="{{ path('order_update_status', {id: order.id}) }}" class="d-inline-block">
+				<select name="status" class="form-select form-select-sm d-inline-block w-auto">
+					<option value="PENDING" {% if order.status == 'PENDING' %} selected {% endif %}>En attente</option>
+					<option value="PROCESSING" {% if order.status == 'PROCESSING' %} selected {% endif %}>En cours</option>
+					<option value="SHIPPED" {% if order.status == 'SHIPPED' %} selected {% endif %}>Envoyé</option>
+					<option value="COMPLETED" {% if order.status == 'COMPLETED' %} selected {% endif %}>Terminé</option>
+				</select>
+				<button class="btn btn-primary btn-sm ms-2" type="submit">Mettre à jour</button>
+			</form>
+		{% else %}
+			<span class="badge {% if order.status == 'COMPLETED' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+				{{ order.status }}
+			</span>
+		{% endif %}
+	</li>
+	<div class="timeline">
+		<div class="timeline-step {% if order.status in ['PENDING', 'PROCESSING', 'SHIPPED', 'COMPLETED'] %}active{% endif %}">
+			<span class="badge bg-secondary">En attente</span>
+		</div>
+		<div class="timeline-step {% if order.status in ['PROCESSING', 'SHIPPED', 'COMPLETED'] %}active{% endif %}">
+			<span class="badge bg-warning">En cours de traitement</span>
+		</div>
+		<div class="timeline-step {% if order.status in ['SHIPPED', 'COMPLETED'] %}active{% endif %}">
+			<span class="badge bg-info">Envoyé</span>
+		</div>
+		<div class="timeline-step {% if order.status == 'COMPLETED' %}active{% endif %}">
+			<span class="badge bg-success">Terminé</span>
+		</div>
+	</div>
 
 	<a href="{{ path('app_home') }}" class="btn btn-primary">Retour à l'accueil</a>
 {% endblock %}

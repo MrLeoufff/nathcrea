@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Order;
 use App\Entity\OrderItem;
+use App\Entity\Product;
 use App\Service\CartService;
 use App\Service\PayPalService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -161,44 +162,54 @@ class PaymentController extends AbstractController
                 $order->setUser($this->getUser());
                 $entityManager->persist($order);
 
-                // Ajouter les articles à la commande
+                // Parcourir les unités d'achat et mettre à jour le stock
                 foreach ($response->result->purchase_units as $unit) {
-                    // Vérifier les données obligatoires
-                    if (!isset($unit->description) || !isset($unit->amount->value)) {
-                        throw new \Exception('Données manquantes pour l\'article : ' . json_encode($unit));
+                    $description = $unit->description ?? null;
+                    $amountValue = $unit->amount->value ?? null;
+
+                    if (!$description || !$amountValue) {
+                        throw new \Exception('Données manquantes pour l\'unité d\'achat : ' . json_encode($unit));
                     }
 
-                    // Récupérer la quantité à partir des données de la session
+                    // Rechercher le produit dans la base de données
+                    $product = $entityManager->getRepository(Product::class)->findOneBy(['name' => $description]);
+
+                    if (!$product) {
+                        throw new \Exception('Produit introuvable dans la base de données : ' . $description);
+                    }
+
+                    // Vérifier la quantité commandée
                     $cartItems = $this->cartService->getCartItems($entityManager);
-                    $cartItem = array_filter($cartItems, function ($item) use ($unit) {
-                        return $item['product']->getName() === $unit->description;
-                    });
+                    $cartItem = array_filter($cartItems, fn($item) => $item['product']->getName() === $description);
 
                     if (empty($cartItem)) {
-                        throw new \Exception('Impossible de trouver l\'article correspondant dans le panier : ' . $unit->description);
+                        throw new \Exception('Impossible de trouver l\'article correspondant dans le panier : ' . $description);
                     }
 
                     $quantity = (int) $cartItem[array_key_first($cartItem)]['quantity'];
 
+                    // Vérifier et mettre à jour le stock
+                    $newStock = $product->getStock() - $quantity;
+                    if ($newStock < 0) {
+                        throw new \Exception('Stock insuffisant pour le produit ' . $product->getName());
+                    }
+                    $product->setStock($newStock);
+
+                    // Ajouter l'article à la commande
                     $orderItem = new OrderItem();
-                    $orderItem->setProductName($unit->description);
+                    $orderItem->setProductName($product->getName());
                     $orderItem->setQuantity($quantity);
-                    $orderItem->setUnitPrice((float) $unit->amount->value / $quantity);
-                    $orderItem->setTotalPrice((float) $unit->amount->value);
+                    $orderItem->setUnitPrice((float) $amountValue / $quantity);
+                    $orderItem->setTotalPrice((float) $amountValue);
                     $orderItem->setOrderRef($order);
                     $entityManager->persist($orderItem);
                 }
 
-                try {
-                    $entityManager->flush();
-                    $this->cartService->cleanCart();
-                    $logger->info('Commande enregistrée et panier vidé.');
-                } catch (\Exception $e) {
-                    $logger->error('Erreur lors du flush : ' . $e->getMessage());
-                    $this->addFlash('error', 'Erreur lors de l\'enregistrement en BDD.');
-                    return $this->redirectToRoute('cart_index');
-                }
+                // Sauvegarder la commande et vider le panier
+                $entityManager->flush();
+                $this->cartService->cleanCart();
 
+                $logger->info('Commande enregistrée et panier vidé.');
                 $this->addFlash('success', 'Votre paiement a été validé avec succès.');
                 return $this->redirectToRoute('app_order_confirmation', ['orderId' => $order->getId()]);
             }

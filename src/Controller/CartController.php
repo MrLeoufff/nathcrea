@@ -6,6 +6,7 @@ use App\Entity\Product;
 use App\Service\CartService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -38,6 +39,16 @@ class CartController extends AbstractController
 
         if (!$product) {
             $this->addFlash('error', "Produit non trouvé.");
+            return $this->redirectToRoute('cart_index');
+        }
+
+        // Vérification du stock
+        $cartItems = $this->cartService->getCartItems($entityManager);
+        $existingQuantity = $cartItems[$id]['quantity'] ?? 0;
+        $requestedQuantity = $existingQuantity + 1;
+
+        if ($product->getStock() < $requestedQuantity) {
+            $this->addFlash('error', "Stock insuffisant pour le produit : {$product->getName()}");
             return $this->redirectToRoute('cart_index');
         }
 
@@ -86,6 +97,17 @@ class CartController extends AbstractController
         if (empty($cartItems)) {
             $this->addFlash('error', 'Votre panier est vide.');
             return $this->redirectToRoute('cart_index');
+        }
+
+        // Vérification du stock pour chaque produit
+        foreach ($cartItems as $item) {
+            $product = $item['product'];
+            $quantity = $item['quantity'];
+
+            if ($product->getStock() < $quantity) {
+                $this->addFlash('error', "Stock insuffisant pour le produit : {$product->getName()}.");
+                return $this->redirectToRoute('cart_index');
+            }
         }
 
         // Étape 2 : Construire les unités d'achat (purchase_units)
@@ -146,6 +168,59 @@ class CartController extends AbstractController
             $this->addFlash('error', 'Erreur lors de la validation du panier : ' . $e->getMessage());
             return $this->redirectToRoute('cart_index');
         }
+    }
+
+    #[Route('/api/add/{id}', name: 'api_cart_add', methods: ['POST'])]
+    public function apiAdd(int $id, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $product = $entityManager->getRepository(Product::class)->find($id);
+
+        if (!$product) {
+            return new JsonResponse(['error' => 'Produit non trouvé.'], 404);
+        }
+
+        // Vérification du stock
+        $cartItems = $this->cartService->getCartItems($entityManager);
+        $existingQuantity = $cartItems[$id]['quantity'] ?? 0;
+        $requestedQuantity = $existingQuantity + 1;
+
+        if ($product->getStock() < $requestedQuantity) {
+            return new JsonResponse(['error' => 'Stock insuffisant.'], 400);
+        }
+
+        $this->cartService->addToCart($product);
+
+        return new JsonResponse([
+            'success' => true,
+            'message' => 'Produit ajouté au panier.',
+            'cart' => $this->cartService->getCart(),
+        ]);
+    }
+
+    #[Route('/api/remove/{id}', name: 'api_cart_remove', methods: ['POST'])]
+    public function apiRemove(int $id, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $product = $entityManager->getRepository(Product::class)->find($id);
+
+        if (!$product) {
+            return new JsonResponse(['error' => 'Produit non trouvé.'], 404);
+        }
+
+        $this->cartService->removeFromCart($product);
+
+        return new JsonResponse([
+            'success' => true,
+            'message' => 'Produit retiré du panier.',
+            'cart' => $this->cartService->getCart(),
+        ]);
+    }
+
+    #[Route('/api/cart/count', name: 'api_cart_count', methods: ['GET'])]
+    public function getCartCount(): JsonResponse
+    {
+        $cart = $this->cartService->getCart();
+        $totalQuantity = array_sum($cart);
+        return new JsonResponse(['count' => $totalQuantity]);
     }
 
 }

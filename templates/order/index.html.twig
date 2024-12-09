@@ -1,20 +1,51 @@
-{% extends 'base.html.twig' %}
-
-{% block title %}Hello OrderController!{% endblock %}
-
 {% block body %}
-<style>
-    .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
-    .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
-</style>
-
-<div class="example-wrapper">
-    <h1>Hello {{ controller_name }}! ✅</h1>
-
-    This friendly message is coming from:
-    <ul>
-        <li>Your controller at <code>C:/wamp64/www/nathcrea/src/Controller/OrderController.php</code></li>
-        <li>Your template at <code>C:/wamp64/www/nathcrea/templates/order/index.html.twig</code></li>
-    </ul>
-</div>
+	<h1 class="text-center my-4">Mes Commandes</h1>
+	<table class="table table-bordered">
+		<thead class="table-dark">
+			<tr>
+				<th>Numéro</th>
+				<th>Date</th>
+				<th>Total</th>
+				<th>Statut</th>
+				<th>Actions</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for order in orders %}
+				<tr>
+					<td>{{ order.id }}</td>
+					<td>{{ order.createdAt|date('d/m/Y H:i') }}</td>
+					<td>{{ order.totalAmount }}
+						€</td>
+					<td>
+						<span class="badge
+																{% if order.status == 'COMPLETED' %}bg-success
+																{% elseif order.status == 'SHIPPED' %}bg-info
+																{% elseif order.status == 'PROCESSING' %}bg-warning
+																{% else %}bg-secondary
+																{% endif %}">
+							{% if order.status == 'PENDING' %}
+								En attente
+							{% elseif order.status == 'PROCESSING' %}
+								En cours de traitement
+							{% elseif order.status == 'SHIPPED' %}
+								Envoyé
+							{% elseif order.status == 'COMPLETED' %}
+								Terminé
+							{% else %}
+								Inconnu
+							{% endif %}
+						</span>
+					</td>
+					<td>
+						<a href="{{ path('app_order_confirmation', { orderId: order.id }) }}" class="btn btn-primary btn-sm">Voir</a>
+					</td>
+				</tr>
+			{% else %}
+				<tr>
+					<td colspan="5" class="text-center">Aucune commande trouvée</td>
+				</tr>
+			{% endfor %}
+		</tbody>
+	</table>
 {% endblock %}

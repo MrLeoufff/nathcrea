@@ -18,6 +18,22 @@ class OrderController extends AbstractController
         $this->orderService = $orderService;
     }
 
+    #[Route('/orders', name: 'app_orders')]
+    public function listOrders(EntityManagerInterface $entityManager): Response
+    {
+        $user = $this->getUser();
+
+        if (!$user) {
+            throw $this->createAccessDeniedException('Vous devez être connecté pour voir vos commandes.');
+        }
+
+        $orders = $entityManager->getRepository(Order::class)->findBy(['user' => $user]);
+
+        return $this->render('order/index.html.twig', [
+            'orders' => $orders,
+        ]);
+    }
+
     #[Route('/order/create', name: 'order_create')]
     public function createOrder(): Response
     {
@@ -48,4 +64,38 @@ class OrderController extends AbstractController
             'order' => $order,
         ]);
     }
+
+    #[Route('/order/{id}/update-status', name: 'order_update_status', methods: ['POST'])]
+    public function updateStatus(int $id, EntityManagerInterface $entityManager, \Symfony\Component\HttpFoundation\Request $request): Response
+    {
+        $order = $entityManager->getRepository(Order::class)->find($id);
+
+        if (!$order) {
+            $this->addFlash('error', "Commande introuvable.");
+            return $this->redirectToRoute('app_categories');
+        }
+
+        // Vérifiez si l'utilisateur est autorisé à effectuer cette action
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            throw $this->createAccessDeniedException('Vous n\'êtes pas autorisé à modifier cette commande.');
+        }
+
+        // Récupérer le statut depuis la requête
+        $newStatus = $request->request->get('status');
+
+        // Valider le statut
+        $validStatuses = ['PENDING', 'PROCESSING', 'SHIPPED', 'COMPLETED'];
+        if (!in_array($newStatus, $validStatuses)) {
+            $this->addFlash('error', 'Statut invalide.');
+            return $this->redirectToRoute('app_order_confirmation', ['orderId' => $id]);
+        }
+
+        // Mettre à jour le statut de la commande
+        $order->setStatus($newStatus);
+        $entityManager->flush();
+
+        $this->addFlash('success', "Le statut de la commande a été mis à jour avec succès.");
+        return $this->redirectToRoute('app_order_confirmation', ['orderId' => $id]);
+    }
+
 }
