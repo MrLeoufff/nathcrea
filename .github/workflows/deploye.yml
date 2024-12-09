@@ -19,7 +19,7 @@ jobs:
       - name: Deploy to Raspberry Pi using sshpass
         run: |
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_IP }} "
-            cd /var/www/nathcrea &&
+            cd /var/www/Nathcrea &&
             git pull origin main &&
             composer install --no-interaction --prefer-dist --optimize-autoloader &&
             php bin/console cache:clear --env=prod &&
