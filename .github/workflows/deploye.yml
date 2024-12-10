@@ -16,19 +16,39 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get install -y sshpass
 
+      - name: Debug Git and Workflow
+        run: |
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_IP }} bash -c "
+            echo 'Listing contents of /var/www/Nathcrea...';
+            ls -la /var/www/Nathcrea;
+
+            echo 'Checking Git status...';
+            cd /var/www/Nathcrea &&
+            git status;
+
+            echo 'Pulling latest changes...';
+            git pull origin main;
+          "
+
       - name: Deploy to Raspberry Pi using sshpass
         run: |
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_IP }} bash -c "
             echo 'Step 0: Checking permissions and directories...';
-            sudo mkdir -p /var/www/Nathcrea &&
-            sudo chown -R $USER:$USER /var/www &&
-            sudo chmod -R 775 /var/www;
-
+            sudo chown -R $USER:$USER /var/www/Nathcrea &&
+            sudo chmod -R 775 /var/www/Nathcrea;
+            
             echo 'Step 1: Navigating to /var/www/Nathcrea...';
-            cd /var/www/Nathcrea &&
-            git pull origin main &&
-            git checkout -- .env &&
-            composer install --no-interaction --prefer-dist --optimize-autoloader &&
-            php bin/console cache:clear --env=prod &&
-            sudo systemctl restart nginx;
+            if [ -d '/var/www/Nathcrea/.git' ]; then
+              echo 'Git repository found. Pulling changes...';
+              cd /var/www/Nathcrea &&
+              git status &&
+              git pull origin main &&
+              git checkout -- .env &&
+              composer install --no-interaction --prefer-dist --optimize-autoloader &&
+              php bin/console cache:clear --env=prod &&
+              sudo systemctl restart nginx;
+            else
+              echo 'No Git repository found. Exiting...';
+              exit 1;
+            fi
           "
