@@ -16,24 +16,27 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Install sshpass & update apt
+      - name: Install sshpass
         run: |
-          sudo apt update
-          sudo apt install -y sshpass
+          sudo apt-get update
+          sudo apt-get install -y sshpass
 
       - name: Deploy application
         run: |
           sshpass -e ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_IP }} << 'EOF'
+          echo "Starting deployment on Raspberry Pi";
+
+          # Vérification du répertoire
           if [ ! -d /var/www/nathcrea ]; then
             echo "Directory does not exist. Cloning repository...";
             git clone https://github.com/MrLeoufff/nathcrea.git /var/www/nathcrea;
           else
             echo "Directory exists. Pulling latest changes...";
             cd /var/www/nathcrea &&
-            git config --global --add safe.directory /var/www/nathcrea &&
             git pull origin main;
           fi;
 
+          # Vérification et installation des dépendances
           echo "Checking dependencies...";
           cd /var/www/nathcrea &&
           if [ ! -d vendor ]; then
@@ -43,9 +46,13 @@ jobs:
             echo "Dependencies already installed.";
           fi;
 
+          # Effacer le cache
           echo "Clearing cache...";
           php bin/console cache:clear --env=prod;
 
+          # Redémarrer les services
           echo "Restarting services...";
           sudo systemctl restart nginx;
+
+          echo "Deployment completed successfully.";
           EOF
