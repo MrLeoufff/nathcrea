@@ -6,25 +6,33 @@ on:
       - main
 
 jobs:
-  update:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
       - name: Install sshpass
         run: sudo apt-get install -y sshpass
 
       - name: Update Nathcrea on Raspberry Pi
         run: |
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_IP }} bash -c "
-            echo 'Step 1: Navigating to /var/www/nathcrea...';
+            echo 'Checking /var/www/nathcrea...';
+            if [ ! -d /var/www/nathcrea ]; then
+              echo 'Directory not found. Cloning repository...';
+              git clone https://github.com/***/nathcrea.git /var/www/nathcrea;
+            else
+              echo 'Directory exists. Pulling updates...';
+              cd /var/www/nathcrea &&
+              git pull origin main;
+            fi &&
+            echo 'Checking dependencies...';
             cd /var/www/nathcrea &&
-            echo 'Step 2: Pulling latest changes...';
-            git pull origin main &&
-            echo 'Step 3: Clearing cache...';
-            php bin/console cache:clear --no-warmup --env=prod &&
-            echo 'Step 4: Restarting services...';
+            if [ ! -d vendor ]; then
+              echo 'Installing dependencies...';
+              composer install --no-interaction --prefer-dist --optimize-autoloader;
+            fi &&
+            echo 'Clearing cache...';
+            php bin/console cache:clear --env=prod &&
+            echo 'Restarting services...';
             sudo systemctl restart nginx;
           "
