@@ -18,11 +18,29 @@ jobs:
 
       - name: Deploy to Raspberry Pi using sshpass
         run: |
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_IP }} "
-            cd /var/www/Nathcrea &&
-            git pull origin main &&
-            git checkout -- .env &&
-            composer install --no-interaction --prefer-dist --optimize-autoloader &&
-            php bin/console cache:clear --env=prod &&
-            sudo systemctl restart nginx
-            "
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_IP }} bash -c "
+            set -e # Arrête le script à la première erreur
+            echo 'Step 1: Checking if /var/www/Nathcrea exists...'
+            if [ ! -d '/var/www/Nathcrea' ]; then
+              echo 'Directory /var/www/Nathcrea does not exist. Exiting.';
+              exit 1;
+            fi;
+            
+            echo 'Step 2: Navigating to /var/www/Nathcrea...'
+            cd /var/www/Nathcrea || exit 1;
+            
+            echo 'Step 3: Pulling latest changes from Git...'
+            git pull origin main || exit 1;
+            
+            echo 'Step 4: Restoring .env...'
+            git checkout -- .env || exit 1;
+            
+            echo 'Step 5: Running Composer install...'
+            composer install --no-interaction --prefer-dist --optimize-autoloader || exit 1;
+            
+            echo 'Step 6: Clearing Symfony cache...'
+            php bin/console cache:clear --env=prod || exit 1;
+            
+            echo 'Step 7: Restarting Nginx...'
+            sudo systemctl restart nginx || exit 1;
+          "
