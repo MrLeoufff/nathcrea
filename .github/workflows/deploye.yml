@@ -22,6 +22,6 @@ jobs:
             cd /var/www/Nathcrea &&
             git pull origin main &&
             composer install --no-interaction --prefer-dist --optimize-autoloader &&
-            php bin/console cache:clear --env=prod &&
+            php bin/console cache:clear &&
             sudo systemctl restart nginx
             "
