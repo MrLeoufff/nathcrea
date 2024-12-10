@@ -1,4 +1,4 @@
-name: Update Nathcrea on Raspberry Pi
+name: Deploy Nathcrea to Raspberry Pi
 
 on:
   push:
@@ -9,30 +9,40 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    steps:
-      - name: Install sshpass
-        run: sudo apt-get install -y sshpass
+    env:
+      SSHPASS: ${{ secrets.SSH_PASSWORD }}
 
-      - name: Update Nathcrea on Raspberry Pi
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install sshpass & update apt
         run: |
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_IP }} bash -c "
-            echo 'Checking /var/www/nathcrea...';
-            if [ ! -d /var/www/nathcrea ]; then
-              echo 'Directory not found. Cloning repository...';
-              git clone https://github.com/***/nathcrea.git /var/www/nathcrea;
-            else
-              echo 'Directory exists. Pulling updates...';
-              cd /var/www/nathcrea &&
-              git pull origin main;
-            fi &&
-            echo 'Checking dependencies...';
+          sudo apt update
+          sudo apt install -y sshpass
+
+      - name: Deploy application
+        run: |
+          sshpass -e ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_IP }} "
+          if [ ! -d /var/www/nathcrea ]; then
+            echo 'Directory does not exist. Cloning repository...';
+            git clone https://github.com/MrLeoufff/nathcrea.git /var/www/nathcrea;
+          else
+            echo 'Directory exists. Pulling latest changes...';
             cd /var/www/nathcrea &&
-            if [ ! -d vendor ]; then
-              echo 'Installing dependencies...';
-              composer install --no-interaction --prefer-dist --optimize-autoloader;
-            fi &&
-            echo 'Clearing cache...';
-            php bin/console cache:clear --env=prod &&
-            echo 'Restarting services...';
-            sudo systemctl restart nginx;
+            git config --global --add safe.directory /var/www/nathcrea &&
+            git pull origin main;
+          fi &&
+          echo 'Checking dependencies...';
+          cd /var/www/nathcrea &&
+          if [ ! -d vendor ]; then
+            echo 'Installing dependencies...';
+            composer install --no-interaction --prefer-dist --optimize-autoloader;
+          else
+            echo 'Dependencies already installed.';
+          fi &&
+          echo 'Clearing cache...';
+          php bin/console cache:clear --env=prod &&
+          echo 'Restarting services...';
+          sudo systemctl restart nginx;
           "
