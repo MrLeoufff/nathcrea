@@ -19,20 +19,16 @@ jobs:
       - name: Deploy to Raspberry Pi using sshpass
         run: |
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_IP }} bash -c "
-            echo 'Step 0: Listing directories in /var/www...';
-            ls -la /var/www;
-            
-            echo 'Step 1: Checking if /var/www/Nathcrea exists...';
-            if [ -d '/var/www/Nathcrea' ]; then
-              echo 'Directory exists, continuing...';
-              cd /var/www/Nathcrea &&
-              git pull origin main &&
-              git checkout -- .env &&
-              composer install --no-interaction --prefer-dist --optimize-autoloader &&
-              php bin/console cache:clear --env=prod &&
-              sudo systemctl restart nginx;
-            else
-              echo 'Directory /var/www/Nathcrea does not exist. Exiting.';
-              exit 1;
-            fi
+            echo 'Step 0: Checking permissions and directories...';
+            sudo mkdir -p /var/www/Nathcrea &&
+            sudo chown -R $USER:$USER /var/www &&
+            sudo chmod -R 775 /var/www;
+
+            echo 'Step 1: Navigating to /var/www/Nathcrea...';
+            cd /var/www/Nathcrea &&
+            git pull origin main &&
+            git checkout -- .env &&
+            composer install --no-interaction --prefer-dist --optimize-autoloader &&
+            php bin/console cache:clear --env=prod &&
+            sudo systemctl restart nginx;
           "
