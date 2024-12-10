@@ -33,6 +33,9 @@ jobs:
           else
             echo "Directory exists. Pulling latest changes...";
             cd /var/www/nathcrea &&
+            echo "Resetting local changes..." &&
+            git reset --hard HEAD &&
+            echo "Pulling latest changes..." &&
             git pull origin main;
           fi;
 
@@ -49,6 +52,10 @@ jobs:
           # Effacer le cache
           echo "Clearing cache...";
           php bin/console cache:clear --env=prod;
+          echo "Warming up cache..." &&
+          php bin/console cache:warmup --env=prod &&
+          chmod -R 775 var/ &&
+          chown -R www-data:www-data var/ &&
 
           # Redémarrer les services
           echo "Restarting services...";
