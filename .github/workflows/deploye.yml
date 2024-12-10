@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      SSHPASS: ${{ secrets.SSH_PASSWORD }}
+      SSHPASS: ${{ secrets.SSHPASS }}
 
     steps:
       - name: Checkout repository
@@ -23,26 +23,29 @@ jobs:
 
       - name: Deploy application
         run: |
-          sshpass -e ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_IP }} "
+          sshpass -e ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_IP }} << 'EOF'
           if [ ! -d /var/www/nathcrea ]; then
-            echo 'Directory does not exist. Cloning repository...';
+            echo "Directory does not exist. Cloning repository...";
             git clone https://github.com/MrLeoufff/nathcrea.git /var/www/nathcrea;
           else
-            echo 'Directory exists. Pulling latest changes...';
+            echo "Directory exists. Pulling latest changes...";
             cd /var/www/nathcrea &&
             git config --global --add safe.directory /var/www/nathcrea &&
             git pull origin main;
-          fi &&
-          echo 'Checking dependencies...';
+          fi;
+
+          echo "Checking dependencies...";
           cd /var/www/nathcrea &&
           if [ ! -d vendor ]; then
-            echo 'Installing dependencies...';
+            echo "Installing dependencies...";
             composer install --no-interaction --prefer-dist --optimize-autoloader;
           else
-            echo 'Dependencies already installed.';
-          fi &&
-          echo 'Clearing cache...';
-          php bin/console cache:clear --env=prod &&
-          echo 'Restarting services...';
+            echo "Dependencies already installed.";
+          fi;
+
+          echo "Clearing cache...";
+          php bin/console cache:clear --env=prod;
+
+          echo "Restarting services...";
           sudo systemctl restart nginx;
-          "
+          EOF
