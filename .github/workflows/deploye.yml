@@ -21,7 +21,8 @@ jobs:
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_IP }} "
             cd /var/www/Nathcrea &&
             git pull origin main &&
+            git checkout -- .env &&
             composer install --no-interaction --prefer-dist --optimize-autoloader &&
-            php bin/console cache:clear &&
+            php bin/console cache:clear --env=prod &&
             sudo systemctl restart nginx
             "
