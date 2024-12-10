@@ -33,22 +33,19 @@ jobs:
       - name: Deploy to Raspberry Pi using sshpass
         run: |
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_IP }} bash -c "
-            echo 'Step 0: Checking permissions and directories...';
-            sudo chown -R $USER:$USER /var/www/Nathcrea &&
-            sudo chmod -R 775 /var/www/Nathcrea;
-            
-            echo 'Step 1: Navigating to /var/www/Nathcrea...';
-            if [ -d '/var/www/Nathcrea/.git' ]; then
-              echo 'Git repository found. Pulling changes...';
-              cd /var/www/Nathcrea &&
-              git status &&
-              git pull origin main &&
-              git checkout -- .env &&
-              composer install --no-interaction --prefer-dist --optimize-autoloader &&
-              php bin/console cache:clear --env=prod &&
-              sudo systemctl restart nginx;
-            else
-              echo 'No Git repository found. Exiting...';
-              exit 1;
-            fi
+            echo 'Step 0: Checking and creating /var/www/nathcrea if necessary...';
+            if [ ! -d '/var/www/nathcrea' ]; then
+            echo 'Directory /var/www/nathcrea not found. Creating it...';
+            sudo mkdir -p /var/www/nathcrea;
+            sudo chown -R $USER:$USER /var/www/nathcrea;
+            git clone https://github.com/MrLeoufff/nathcrea.git /var/www/nathcrea;
+            fi;
+
+            echo 'Step 1: Navigating to /var/www/nathcrea and updating...';
+            cd /var/www/nathcrea &&
+            git pull origin main &&
+            git checkout -- .env &&
+            composer install --no-interaction --prefer-dist --optimize-autoloader &&
+            php bin/console cache:clear --env=prod &&
+            sudo systemctl restart nginx;
           "
