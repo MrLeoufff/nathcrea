@@ -44,7 +44,6 @@ jobs:
             echo 'Step 1: Navigating to /var/www/nathcrea and updating...';
             cd /var/www/nathcrea &&
             git pull origin main &&
-            git checkout -- .env &&
             composer install --no-interaction --prefer-dist --optimize-autoloader &&
             php bin/console cache:clear --env=prod &&
             sudo systemctl restart nginx;
