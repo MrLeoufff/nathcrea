@@ -1,4 +1,4 @@
-name: Deploy to Raspberry Pi
+name: Update Nathcrea on Raspberry Pi
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  deploy:
+  update:
     runs-on: ubuntu-latest
 
     steps:
@@ -16,41 +16,15 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get install -y sshpass
 
-      - name: Debug Git and Workflow
+      - name: Update Nathcrea on Raspberry Pi
         run: |
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_IP }} bash -c "
-            echo 'Listing contents of /var/www/Nathcrea...';
-            ls -la /var/www/Nathcrea;
-
-            echo 'Checking Git status...';
-            cd /var/www/Nathcrea &&
-            git status;
-
-            echo 'Pulling latest changes...';
-            git pull origin main;
-          "
-
-      - name: Deploy to Raspberry Pi using sshpass
-        run: |
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_IP }} bash -c "
-            echo 'Step 0: Checking and creating /var/www/nathcrea if necessary...';
-            if [ ! -d '/var/www/nathcrea' ]; then
-              echo 'Directory /var/www/nathcrea not found. Creating it...';
-              sudo mkdir -p /var/www/nathcrea;
-              sudo chown -R $USER:$USER /var/www/nathcrea;
-              git clone https://github.com/MrLeoufff/nathcrea.git /var/www/nathcrea;
-            fi;
-
-            echo 'Step 1: Ensuring .env exists...';
-            if [ ! -f '/var/www/nathcrea/.env' ]; then
-              echo 'No .env file found. Creating a default .env file...';
-              cp /var/www/nathcrea/.env.example /var/www/nathcrea/.env;
-            fi;
-
-            echo 'Step 2: Navigating to /var/www/nathcrea and updating...';
+            echo 'Step 1: Navigating to /var/www/nathcrea...';
             cd /var/www/nathcrea &&
+            echo 'Step 2: Pulling latest changes...';
             git pull origin main &&
-            composer install --no-interaction --prefer-dist --optimize-autoloader &&
-            php bin/console cache:clear --env=prod &&
+            echo 'Step 3: Clearing cache...';
+            php bin/console cache:clear --no-warmup --env=prod &&
+            echo 'Step 4: Restarting services...';
             sudo systemctl restart nginx;
           "
