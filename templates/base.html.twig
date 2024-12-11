@@ -74,12 +74,21 @@
 							<li class="nav-item">
 								<a class="nav-link" href="{{ path('app_login') }}">Connexion</a>
 							</li>
+							<li class="nav-item">
+								<a class="nav-link" href="{{ path('app_register') }}">Inscription</a>
+							</li>
 						{% endif %}
 					</ul>
 				</div>
 			</nav>
 		{% endif %}
-
+		{% for type, messages in app.flashes %}
+			{% for message in messages %}
+				<div class="alert alert-{{ type }} mt-2">
+					{{ message }}
+				</div>
+			{% endfor %}
+		{% endfor %}
 		<div class="container mt-5"> {% block body %}{% endblock %}
 			</div>
 
