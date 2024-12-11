@@ -2,10 +2,12 @@
 
 namespace App\Controller;
 
+use App\Entity\Review;
 use App\Repository\CategoryRepository;
 use App\Repository\OrderRepository;
 use App\Repository\ProductRepository;
 use App\Repository\UserRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -56,4 +58,33 @@ class AdminDashboardController extends AbstractController
         ]);
     }
 
+    #[Route('/reviews', name: 'reviews')]
+    public function list(EntityManagerInterface $entityManager): Response
+    {
+        $reviews = $entityManager->getRepository(Review::class)->findBy(['isApproved' => false]);
+
+        return $this->render('admin_dashboard/reviews.html.twig', [
+            'reviews' => $reviews,
+        ]);
+    }
+
+    #[Route('/review/{id}/approve', name: 'review_approve')]
+    public function approve(Review $review, EntityManagerInterface $entityManager): Response
+    {
+        $review->setApproved(true);
+        $entityManager->flush();
+
+        $this->addFlash('success', 'L\'avis a été approuvé.');
+        return $this->redirectToRoute('admin_reviews');
+    }
+
+    #[Route('/review/{id}/delete', name: 'review_delete')]
+    public function delete(Review $review, EntityManagerInterface $entityManager): Response
+    {
+        $entityManager->remove($review);
+        $entityManager->flush();
+
+        $this->addFlash('success', 'L\'avis a été supprimé.');
+        return $this->redirectToRoute('admin_reviews');
+    }
 }

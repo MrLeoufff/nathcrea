@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use App\Entity\Category;
 use App\Entity\Product;
+use App\Entity\Review;
+use App\Form\ReviewType;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -14,12 +16,36 @@ class HomeController extends AbstractController
 {
 
     #[Route('/', name: 'app_home')]
-    public function index(EntityManagerInterface $entityManager): Response
+    public function index(Request $request, EntityManagerInterface $entityManager): Response
     {
         $categories = $entityManager->getRepository(Category::class)->findAll();
+        $approvedReviews = $entityManager->getRepository(Review::class)->findBy(['isApproved' => true]);
 
+        $reviewForm = null;
+
+        // Permettre aux utilisateurs connectés de soumettre un avis
+        if ($this->getUser()) {
+            $review = new Review();
+            $review->setUser($this->getUser());
+            $review->setCreatedAt(new \DateTimeImmutable());
+            $review->setApproved(false);
+
+            $reviewForm = $this->createForm(ReviewType::class, $review);
+            $reviewForm->handleRequest($request);
+
+            if ($reviewForm->isSubmitted() && $reviewForm->isValid()) {
+                $entityManager->persist($review);
+                $entityManager->flush();
+
+                $this->addFlash('success', 'Votre avis a été soumis et est en attente de validation.');
+
+                return $this->redirectToRoute('app_home');
+            }
+        }
         return $this->render('home/index.html.twig', [
             'categories' => $categories,
+            'reviews' => $approvedReviews,
+            'reviewForm' => $reviewForm ? $reviewForm->createView() : null,
         ]);
     }
 

@@ -1,0 +1,37 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des avis
+{% endblock %}
+
+{% block body %}
+	<h2>Gestion des avis</h2>
+	<table class="table table-striped">
+		<thead>
+			<tr>
+				<th>Contenu</th>
+				<th>Note</th>
+				<th>Auteur</th>
+				<th>Date</th>
+				<th>Actions</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for review in reviews %}
+				<tr>
+					<td>{{ review.content }}</td>
+					<td>{{ review.rating }}/5</td>
+					<td>{{ review.user.pseudo }}</td>
+					<td>{{ review.createdAt|date('d/m/Y') }}</td>
+					<td>
+						<a href="{{ path('admin_review_approve', { id: review.id }) }}" class="btn btn-success btn-sm">Approuver</a>
+						<a href="{{ path('admin_review_delete', { id: review.id }) }}" class="btn btn-danger btn-sm" onclick="return confirm('Voulez-vous vraiment supprimer cet avis ?')">Supprimer</a>
+					</td>
+				</tr>
+			{% else %}
+				<tr>
+					<td colspan="5" class="text-center">Aucun avis à valider.</td>
+				</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+{% endblock %}

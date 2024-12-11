@@ -20,17 +20,23 @@ class Review
     #[ORM\Column]
     private ?int $rating = null;
 
-    #[ORM\Column]
-    private ?bool $isApproved = null;
+    #[ORM\Column(options: ['default' => false])]
+    private ?bool $isApproved = false;
 
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
-    #[ORM\ManyToOne(inversedBy: 'reviews')]
+    #[ORM\ManyToOne(inversedBy : 'reviews')]
     private ?User $user = null;
 
     #[ORM\ManyToOne(inversedBy: 'reviews')]
     private ?Product $product = null;
+
+    public function __construct()
+    {
+        $this->createdAt = new \DateTimeImmutable();
+        $this->isApproved = false;
+    }
 
     public function getId(): ?int
     {

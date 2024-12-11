@@ -1,0 +1,26 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Ajouter un avis
+{% endblock %}
+
+{% block body %}
+<h2>Ajouter un nouvel avis</h2>
+
+{{ form_start(form) }}
+<div class="mb-3">
+	{{ form_label(form.content, 'Contenu de l\'avis') }}
+        {{ form_widget(form.content, { 'attr': { 'class': 'form-control' } }) }}
+        {{ form_errors(form.content) }}
+    </div>
+
+    <div class="mb-3">
+        {{ form_label(form.rating, 'Note (1-5)') }}
+        {{ form_widget(form.rating, { 'attr': { 'class': 'form-control' } }) }}
+        {{ form_errors(form.rating) }}
+    </div>
+
+    <button type="submit" class="btn btn-primary">Envoyer</button>
+{{ form_end(form) }}
+
+<a href="{{ path('app_home') }}" class="btn btn-secondary mt-3">Retour à l'accueil</a>
+{% endblock %}
