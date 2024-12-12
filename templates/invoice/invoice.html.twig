@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8">
+		<title>Facture #{{ order.id }}</title>
+		<style>
+			body {
+				font-family: Arial, sans-serif;
+			}
+			.header {
+				text-align: center;
+			}
+			.details,
+			.footer {
+				margin-top: 20px;
+			}
+			table {
+				width: 100%;
+				border-collapse: collapse;
+			}
+			th,
+			td {
+				border: 1px solid #ddd;
+				padding: 8px;
+				text-align: left;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="header">
+			<h1>Facture</h1>
+			<p>N° de commande :
+				{{ order.id }}</p>
+			<p>Date :
+				{{ order.date|date('d/m/Y') }}</p>
+		</div>
+
+		<div class="details">
+			<h3>Détails du client</h3>
+			<p>Nom :
+				{{ order.customer.name }}</p>
+			<p>Email :
+				{{ order.customer.email }}</p>
+		</div>
+
+		<div class="details">
+			<h3>Produits</h3>
+			<table>
+				<thead>
+					<tr>
+						<th>Nom du produit</th>
+						<th>Quantité</th>
+						<th>Prix unitaire</th>
+						<th>Total</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for item in order.items %}
+						<tr>
+							<td>{{ item.name }}</td>
+							<td>{{ item.quantity }}</td>
+							<td>{{ item.unit_price|number_format(2, '.', ',') }}
+								€</td>
+							<td>{{ item.total_price|number_format(2, '.', ',') }}
+								€</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+			<h3>Total :
+				{{ order.total|number_format(2, '.', ',') }}
+				€</h3>
+		</div>
+	</body>
+</html>

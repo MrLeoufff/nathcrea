@@ -11,6 +11,7 @@
         "doctrine/doctrine-bundle": "^2.13",
         "doctrine/doctrine-migrations-bundle": "^3.3",
         "doctrine/orm": "^3.3",
+        "dompdf/dompdf": "^3.0",
         "easycorp/easyadmin-bundle": "^4.16",
         "paragonie/sodium_compat": "^2.1",
         "paypal/paypal-checkout-sdk": "^1.0",

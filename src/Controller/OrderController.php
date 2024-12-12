@@ -97,5 +97,4 @@ class OrderController extends AbstractController
         $this->addFlash('success', "Le statut de la commande a été mis à jour avec succès.");
         return $this->redirectToRoute('app_order_confirmation', ['orderId' => $id]);
     }
-
 }

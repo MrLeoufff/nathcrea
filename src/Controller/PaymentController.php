@@ -6,12 +6,15 @@ use App\Entity\Order;
 use App\Entity\OrderItem;
 use App\Entity\Product;
 use App\Service\CartService;
+use App\Service\InvoiceGenerator;
 use App\Service\PayPalService;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Uid\Uuid;
 
@@ -132,7 +135,9 @@ class PaymentController extends AbstractController
         EntityManagerInterface $entityManager,
         Request $request,
         PayPalService $payPalService,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        InvoiceGenerator $invoiceGenerator,
+        MailerInterface $mailer
     ): Response {
         $orderId = $request->query->get('token');
         if (!$orderId) {
@@ -208,6 +213,37 @@ class PaymentController extends AbstractController
                 // Sauvegarder la commande et vider le panier
                 $entityManager->flush();
                 $this->cartService->cleanCart();
+
+                // Générer la facture
+                $invoiceItems = array_map(function ($item) {
+                    return [
+                        'name' => $item['product']->getName(),
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $item['product']->getPrice(),
+                        'total_price' => $item['quantity'] * $item['product']->getPrice(),
+                    ];
+                }, $cartItems);
+
+                $invoicePath = $invoiceGenerator->generateInvoice([
+                    'id' => $order->getId(),
+                    'date' => new \DateTime(),
+                    'customer' => [
+                        'name' => $this->getUser()->getPseudo(),
+                        'email' => $this->getUser()->getEmail(),
+                    ],
+                    'items' => $invoiceItems,
+                    'total' => $order->getTotalAmount(),
+                ]);
+
+                // Envoyer la facture par email
+                $email = (new Email())
+                    ->from('developpeur.web.gard@gmail.com')
+                    ->to($this->getUser()->getEmail())
+                    ->subject('Confirmation de commande et facture')
+                    ->text('Merci pour votre commande. Veuillez trouver votre facture en pièce jointe.')
+                    ->attachFromPath($invoicePath);
+
+                $mailer->send($email);
 
                 $logger->info('Commande enregistrée et panier vidé.');
                 $this->addFlash('success', 'Votre paiement a été validé avec succès.');
