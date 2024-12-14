@@ -59,10 +59,8 @@
 						<tr>
 							<td>{{ item.name }}</td>
 							<td>{{ item.quantity }}</td>
-							<td>{{ item.unit_price|number_format(2, '.', ',') }}
-								€</td>
-							<td>{{ item.total_price|number_format(2, '.', ',') }}
-								€</td>
+							<td>{{ item.unit_price }}</td>
+							<td>{{ item.total_price }}</td>
 						</tr>
 					{% endfor %}
 				</tbody>

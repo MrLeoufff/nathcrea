@@ -32,6 +32,7 @@ class OrderItem
     private ?Product $product = null;
 
     #[ORM\ManyToOne(inversedBy: 'orderItems')]
+    #[ORM\JoinColumn(onDelete: 'CASCADE')]
     private ?Order $orderRef = null;
 
     public function getId(): ?int

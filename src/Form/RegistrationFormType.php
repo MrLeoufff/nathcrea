@@ -7,6 +7,7 @@ use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\RepeatedType;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Validator\Constraints\IsTrue;
@@ -64,6 +65,18 @@ class RegistrationFormType extends AbstractType
                 ],
                 'invalid_message' => 'Les mots de passe doivent correspondre.',
                 'mapped' => false,
+            ])
+            ->add('firstName', TextType::class, [
+                'label' => 'Prénom',
+                'attr' => ['placeholder' => 'Entrez votre prénom'],
+            ])
+            ->add('lastName', TextType::class, [
+                'label' => 'Nom',
+                'attr' => ['placeholder' => 'Entrez votre nom'],
+            ])
+            ->add('address', TextareaType::class, [
+                'label' => 'Adresse',
+                'attr' => ['placeholder' => 'Entrez votre adresse complète'],
             ])
             ->add('agreeTerms', CheckboxType::class, [
                 'label' => 'Accepter les conditions générales',

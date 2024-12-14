@@ -29,6 +29,9 @@ services:
             $clientId: '%env(PAYPAL_CLIENT_ID)%'
             $clientSecret: '%env(PAYPAL_SECRET)%'
             $mode: '%env(PAYPAL_MODE)%'
+    App\Service\ForgetMeService:
+        arguments:
+            $archiveDir: '%kernel.project_dir%/public/uploads/invoices_archives'
 
 
 

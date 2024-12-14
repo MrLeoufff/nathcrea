@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Form\UserType;
 use App\Repository\UserRepository;
+use App\Service\ForgetMeService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -81,11 +82,46 @@ class UserController extends AbstractController
     #[Route('/user/{id}', name: 'app_user_delete', methods: ['POST'])]
     public function delete(Request $request, User $user, EntityManagerInterface $entityManager): Response
     {
+        $currentUser = $this->getUser();
+        // Empêcher l'admin de supprimer son propre compte
+        if ($currentUser->getId() === $user->getId()) {
+            $this->addFlash('error', 'Vous ne pouvez pas supprimer votre propre compte.');
+            return $this->redirectToRoute('app_user_index');
+        }
+
         if ($this->isCsrfTokenValid('delete' . $user->getId(), $request->getPayload()->getString('_token'))) {
             $entityManager->remove($user);
             $entityManager->flush();
         }
 
         return $this->redirectToRoute('app_user_index', [], Response::HTTP_SEE_OTHER);
+    }
+
+    #[Route('/user/{id}/forget', name: 'app_user_forget', methods: ['POST'])]
+    public function forgetUser(
+        Request $request,
+        User $user,
+        ForgetMeService $forgetMeService,
+        EntityManagerInterface $entityManager
+    ): Response {
+        $currentUser = $this->getUser();
+
+        // Empêcher l'admin d'utiliser le droit à l'oubli sur lui-même
+        if ($currentUser->getId() === $user->getId()) {
+            $this->addFlash('error', 'Vous ne pouvez pas activer le droit à l\'oubli sur votre propre compte.');
+            return $this->redirectToRoute('app_user_index');
+        }
+
+        if ($this->isCsrfTokenValid('forget' . $user->getId(), $request->request->get('_token'))) {
+            // Sauvegarder les factures
+            $archivePath = $forgetMeService->archiveUserInvoices($user);
+
+            // Supprimer les données utilisateur
+            $forgetMeService->deleteUserData($user, $entityManager);
+
+            $this->addFlash('success', "Les données de l'utilisateur ont été supprimées. Les factures sont archivées dans : $archivePath");
+        }
+
+        return $this->redirectToRoute('app_user_index');
     }
 }
