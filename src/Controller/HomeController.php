@@ -6,6 +6,8 @@ use App\Entity\Category;
 use App\Entity\Product;
 use App\Entity\Review;
 use App\Form\ReviewType;
+use App\Repository\ReviewRepository;
+use App\Service\NoXSS;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -14,12 +16,25 @@ use Symfony\Component\Routing\Attribute\Route;
 
 class HomeController extends AbstractController
 {
+    private NoXSS $noXSS;
+
+    public function __construct(NoXSS $noXSS)
+    {
+        $this->noXSS = $noXSS;
+    }
 
     #[Route('/', name: 'app_home')]
-    public function index(Request $request, EntityManagerInterface $entityManager): Response
-    {
+    public function index(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        ReviewRepository $reviewRepository
+    ): Response {
         $categories = $entityManager->getRepository(Category::class)->findAll();
-        $approvedReviews = $entityManager->getRepository(Review::class)->findBy(['isApproved' => true]);
+        $approvedReviews = $reviewRepository->findBy(['isApproved' => true]);
+
+        foreach ($approvedReviews as $review) {
+            $review->setContent($this->noXSS->nettoyage($review->getContent()));
+        }
 
         $reviewForm = null;
 
@@ -33,15 +48,29 @@ class HomeController extends AbstractController
             $reviewForm = $this->createForm(ReviewType::class, $review);
             $reviewForm->handleRequest($request);
 
-            if ($reviewForm->isSubmitted() && $reviewForm->isValid()) {
-                $entityManager->persist($review);
-                $entityManager->flush();
+            // Initialisation de la variable $acceptPseudo
+            $acceptPseudo = false;
 
-                $this->addFlash('success', 'Votre avis a été soumis et est en attente de validation.');
+            if ($reviewForm->isSubmitted()) {
+                $acceptPseudo = $request->request->get('accept_pseudo') === '1';
 
-                return $this->redirectToRoute('app_home');
+                if (!$acceptPseudo) {
+                    $this->addFlash('error', 'Vous devez accepter que votre pseudo soit affiché pour soumettre un avis.');
+                } elseif ($reviewForm->isValid()) {
+                    $review->setContent($this->noXSS->nettoyage($review->getContent()));
+
+                    $entityManager->persist($review);
+                    $entityManager->flush();
+
+                    $this->addFlash('success', 'Votre avis a été soumis et est en attente de validation.');
+
+                    return $this->redirectToRoute('app_home');
+                } else {
+                    $this->addFlash('error', 'Erreur lors de la soumission de votre avis.');
+                }
             }
         }
+
         return $this->render('home/index.html.twig', [
             'categories' => $categories,
             'reviews' => $approvedReviews,

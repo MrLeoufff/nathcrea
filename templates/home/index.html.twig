@@ -46,77 +46,128 @@
 				</div>
 			</div>
 		</section>
-		<section>
-			<h2>Avis des utilisateurs</h2>
-			{% for review in reviews %}
-				<div class="review">
-					<p>{{ review.content }}</p>
-					<p>Note :
-						{{ review.rating }}/5</p>
-					<small>Posté par
-						{{ review.user.pseudo }}
-						le
-						{{ review.createdAt|date('d/m/Y') }}</small>
-				</div>
-			{% else %}
-				<p>Aucun avis pour le moment.</p>
-			{% endfor %}
+		<section class="user-reviews">
+			<div class="col-lg-4 p-4 rounded-4 border cadre">
+				<h2 class="text-center">Avis des utilisateurs</h2>
 
-			{% if app.user %}
-				{% if reviewForm is not null %}
-					<div class="add-review-form">
-						<h3>Laissez un avis</h3>
-						{{ form_start(reviewForm) }}
-						{{ form_row(reviewForm.content, { 'attr': { 'placeholder': 'Votre avis...' } }) }}
-						{{ form_row(reviewForm.rating, { 'attr': { 'placeholder': 'Note (1-5)' } }) }}
-						<button type="submit">Envoyer</button>
-						{{ form_end(reviewForm) }}
+				{# Affichage des trois derniers avis triés par date décroissante #}
+				{% for singleReview in reviews | reverse | slice(0, 3) %}
+					<div class="card m-2 avis mt-xxl-5">
+						<div class="card-header">
+							{{ singleReview.user.pseudo }}
+							<div class="rating">
+								{% for i in 1..5 %}
+									{% if i <= singleReview.rating %}
+										<i class="fas fa-star"></i>
+									{% else %}
+										<i class="far fa-star"></i>
+									{% endif %}
+								{% endfor %}
+							</div>
+						</div>
+						<div class="card-body">
+							<p class="text-muted">{{ singleReview.createdAt|date('d/m/Y') }}</p>
+							<p>{{ singleReview.content }}</p>
+						</div>
 					</div>
-				{% endif %}
-			{% else %}
-				<p class="text-center">Vous devez être connecté pour laisser un avis.</p>
-			{% endif %}
-		</section>
-		<section>
-			<h1>Nos Catégories</h1>
-			<div class="row">
-				{% for category in categories %}
-					<div class="col-md-4">
-						<div class="card mb-4">
+				{% else %}
+					<p class="text-center mt-4">Aucun avis pour le moment.</p>
+				{% endfor %}
+
+				{# Formulaire d'ajout d'avis #}
+				{% if app.user %}
+					{% if reviewForm is not null %}
+						<div class="card container text-center form-control avis mt-xxl-5">
+							{{ form_start(reviewForm) }}
 							<div class="card-body">
-								<h5 class="card-title">{{ category.name }}</h5>
-								<p class="card-text">{{ category.description }}</p>
-								<a href="{{ path('app_category_products', { id: category.id }) }}" class="btn btn-primary">Voir les produits</a>
+								{{ form_label(reviewForm.content) }}
+								{{ form_widget(reviewForm.content, {'attr': {'placeholder': 'Votre avis...', 'class': 'form-control'}}) }}
+								<div class="form-group">
+									<label>Note</label>
+									<div class="rating" id="review-rating-form">
+										{{ form_widget(reviewForm.rating, {'attr': {'type': 'hidden', 'id': 'review_rating'}}) }}
+										{% for i in 1..5 %}
+											<i class="far fa-star" data-value="{{ i }}" data-target="form"></i>
+										{% endfor %}
+									</div>
+								</div>
+							</div>
+							<input type="hidden" name="accept_pseudo" id="accept_pseudo" value="0">
+							<button type="button" class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#confirmModal">
+								Soumettre
+							</button>
+							{{ form_end(reviewForm) }}
+						</div>
+					{% endif %}
+				{% else %}
+					<p class="text-center text-warning mt-4">Vous devez être connecté pour laisser un avis.</p>
+				{% endif %}
+
+
+				{# Modal de confirmation pour l'affichage du pseudo #}
+				<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+					<div class="modal-dialog">
+						<div class="modal-content">
+							<div class="modal-header">
+								<h5 class="modal-title" id="confirmModalLabel">Confirmer l'affichage du pseudo</h5>
+								<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+							</div>
+							<div class="modal-body">
+								En soumettant votre avis, vous acceptez que votre pseudo soit affiché publiquement. Voulez-vous continuer ?
+							</div>
+							<div class="modal-footer">
+								<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+								<button type="button" class="btn btn-primary" id="confirmButton">J'accepte</button>
 							</div>
 						</div>
 					</div>
-				{% endfor %}
-			</div>
-		</section>
+				</div>
 
-		<!-- Section À propos -->
-		<section class="about-me-section">
-			<div class="container">
-				<div
-					class="row align-items-center">
-					<!-- Image à gauche -->
-					<div class="col-md-6 text-center">
-						<img src="{{ asset('images/nath.jpg') }}" alt="Photo de Nathalie" class="about-me-img">
-					</div>
-					<!-- Texte à droite -->
-					<div class="col-md-6">
-						<h2 class="section-title">À propos de moi</h2>
-						<p class="about-me-text">
-							Je m'appelle Nathalie, et je suis passionnée par l'artisanat et la créativité. Mon objectif est de transformer vos idées en créations uniques et personnalisées qui apportent du bonheur dans votre vie quotidienne.
-						</p>
-						<p class="about-me-text">
-							Chaque création est réalisée avec soin, en mélangeant amour, passion et attention aux détails. Que ce soit pour offrir un cadeau spécial ou simplement pour vous faire plaisir, je suis là pour rendre chaque moment mémorable.
-						</p>
-						<a href="#contact" class="btn btn-primary">Contactez-moi</a>
+			</section>
+
+			<section>
+				<h1>Nos Catégories</h1>
+				<div class="row">
+					{% for category in categories %}
+						<div class="col-md-4">
+							<div class="card mb-4">
+								<div class="card-body">
+									<h5 class="card-title">{{ category.name }}</h5>
+									<p class="card-text">{{ category.description }}</p>
+									<a href="{{ path('app_category_products', { id: category.id }) }}" class="btn btn-primary">Voir les produits</a>
+								</div>
+							</div>
+						</div>
+					{% endfor %}
+				</div>
+			</section>
+
+			<!-- Section À propos -->
+			<section class="about-me-section">
+				<div class="container">
+					<div
+						class="row align-items-center">
+						<!-- Image à gauche -->
+						<div class="col-md-6 text-center">
+							<img src="{{ asset('images/nath.jpg') }}" alt="Photo de Nathalie" class="about-me-img">
+						</div>
+						<!-- Texte à droite -->
+						<div class="col-md-6">
+							<h2 class="section-title">À propos de moi</h2>
+							<p class="about-me-text">
+								Je m'appelle Nathalie, et je suis passionnée par l'artisanat et la créativité. Mon objectif est de transformer vos idées en créations uniques et personnalisées qui apportent du bonheur dans votre vie quotidienne.
+							</p>
+							<p class="about-me-text">
+								Chaque création est réalisée avec soin, en mélangeant amour, passion et attention aux détails. Que ce soit pour offrir un cadeau spécial ou simplement pour vous faire plaisir, je suis là pour rendre chaque moment mémorable.
+							</p>
+							<a href="#contact" class="btn btn-primary">Contactez-moi</a>
+						</div>
 					</div>
 				</div>
-			</div>
-		</section>
-	</div>
+			</section>
+		</div>
+	{% endblock %}
+	{% block javascripts %}
+		{{ parent() }}
 
-{% endblock %}
+	{% endblock %}

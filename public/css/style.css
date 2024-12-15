@@ -159,6 +159,16 @@ html, body {
     background-color: #0056b3;
 }
 
+.rating i {
+    cursor: pointer;
+    color: gold;
+    font-size: 24px;
+}
+
+#review-rating-form #review_rating {
+    display: none;
+}
+
 
 /* Cartes de catégories */
 .category-card {

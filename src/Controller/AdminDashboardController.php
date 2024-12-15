@@ -6,6 +6,7 @@ use App\Entity\Review;
 use App\Repository\CategoryRepository;
 use App\Repository\OrderRepository;
 use App\Repository\ProductRepository;
+use App\Repository\ReviewRepository;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -20,7 +21,8 @@ class AdminDashboardController extends AbstractController
         UserRepository $userRepository,
         CategoryRepository $categoryRepository,
         ProductRepository $productRepository,
-        OrderRepository $orderRepository
+        OrderRepository $orderRepository,
+        ReviewRepository $reviewRepository
     ): Response {
         // Vérifiez que l'utilisateur est admin
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
@@ -29,6 +31,7 @@ class AdminDashboardController extends AbstractController
         $categories = $categoryRepository->findAll();
         $products = $productRepository->findAll();
         $orders = $orderRepository->findAll();
+        $reviews = $reviewRepository->findAll();
 
         // Récupérez les données nécessaires
         return $this->render('admin_dashboard/index.html.twig', [
@@ -36,6 +39,7 @@ class AdminDashboardController extends AbstractController
             'categories' => $categories,
             'products' => $products,
             'orders' => $orders,
+            'reviews' => $reviews,
         ]);
     }
 

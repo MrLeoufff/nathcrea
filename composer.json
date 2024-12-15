@@ -13,6 +13,7 @@
         "doctrine/orm": "^3.3",
         "dompdf/dompdf": "^3.0",
         "easycorp/easyadmin-bundle": "^4.16",
+        "ezyang/htmlpurifier": "^4.18",
         "paragonie/sodium_compat": "^2.1",
         "paypal/paypal-checkout-sdk": "^1.0",
         "phpdocumentor/reflection-docblock": "^5.6",

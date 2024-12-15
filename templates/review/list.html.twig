@@ -1,0 +1,53 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Liste des Avis
+{% endblock %}
+
+{% block body %}
+	<div class="container mt-4">
+		<h1 class="text-center mb-5">Liste des Avis</h1>
+
+		{% if reviews is not empty %}
+			<ul class="list-group shadow-sm">
+				{% for review in reviews %}
+					<li class="list-group-item">
+						<p>
+							<strong>Auteur :</strong>
+							{{ review.user.pseudo }}</p>
+						<p>
+							<strong>Note :</strong>
+							{{ review.rating }}
+							/ 5</p>
+						<p>
+							<strong>Commentaire :</strong>
+							{{ review.content }}</p>
+						<p>
+							<small class="text-muted">Posté le
+								{{ review.createdAt|date('d/m/Y') }}</small>
+						</p>
+						{% if not review.approved %}
+							<span class="badge bg-warning text-dark">En attente de validation</span>
+						{% else %}
+							<span class="badge bg-success">Approuvé</span>
+						{% endif %}
+
+						{% if is_granted('ROLE_ADMIN') %}
+							<div class="mt-2">
+								{% if not review.approved %}
+									<form method="post" action="{{ path('app_review_approve', { id: review.id }) }}" class="d-inline">
+										<button type="submit" class="btn btn-sm btn-success">Approuver</button>
+									</form>
+								{% endif %}
+								<form method="post" action="{{ path('app_review_delete', { id: review.id }) }}" class="d-inline" onsubmit="return confirm('Voulez-vous vraiment supprimer cet avis ?');">
+									<button type="submit" class="btn btn-sm btn-danger">Supprimer</button>
+								</form>
+							</div>
+						{% endif %}
+					</li>
+				{% endfor %}
+			</ul>
+		{% else %}
+			<p class="text-center">Aucun avis disponible pour le moment.</p>
+		{% endif %}
+	</div>
+{% endblock %}
