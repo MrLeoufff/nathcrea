@@ -24,10 +24,16 @@ class OrderController extends AbstractController
         $user = $this->getUser();
 
         if (!$user) {
-            throw $this->createAccessDeniedException('Vous devez être connecté pour voir vos commandes.');
+            throw $this->createAccessDeniedException('Vous devez être connecté pour voir les commandes.');
         }
 
-        $orders = $entityManager->getRepository(Order::class)->findBy(['user' => $user]);
+        // Si l'utilisateur est administrateur, afficher toutes les commandes
+        if ($this->isGranted('ROLE_ADMIN')) {
+            $orders = $entityManager->getRepository(Order::class)->findAll();
+        } else {
+            // Sinon, afficher uniquement les commandes de l'utilisateur connecté
+            $orders = $entityManager->getRepository(Order::class)->findBy(['user' => $user]);
+        }
 
         return $this->render('order/index.html.twig', [
             'orders' => $orders,

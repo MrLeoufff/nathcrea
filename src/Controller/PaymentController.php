@@ -159,7 +159,7 @@ class PaymentController extends AbstractController
                 $order = new Order();
                 $order->setOrderNumber(Uuid::v4()->toRfc4122());
                 $order->setPaypalOrderId($response->result->id);
-                $order->setStatus($response->result->status);
+                $order->setStatus("PENDING");
                 $order->setTotalAmount(array_sum(array_map(
                     fn($unit) => (float) $unit->amount->value,
                     $response->result->purchase_units
