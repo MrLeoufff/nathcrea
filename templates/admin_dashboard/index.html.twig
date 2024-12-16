@@ -26,10 +26,14 @@
 						<span class="badge bg-primary text-light mt-2 mt-md-0">{{ user.roles|join(', ') }}</span>
 					</li>
 					<p>{{ user.pseudo }}</p>
-					<form method="post" action="{{ path('app_user_forget', { id: user.id }) }}">
-						<input type="hidden" name="_token" value="{{ csrf_token('forget' ~ user.id) }}">
-						<button type="submit" class="btn btn-warning btn-sm">Droit à l'oubli</button>
-					</form>
+
+					{# Vérification : n'afficher le bouton que si l'utilisateur n'est pas admin #}
+					{% if 'ROLE_ADMIN' not in user.roles %}
+						<form method="post" action="{{ path('app_user_forget', { id: user.id }) }}">
+							<input type="hidden" name="_token" value="{{ csrf_token('forget' ~ user.id) }}">
+							<button type="submit" class="btn btn-warning btn-sm">Droit à l'oubli</button>
+						</form>
+					{% endif %}
 				{% endfor %}
 			</ul>
 		</section>

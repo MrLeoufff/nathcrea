@@ -46,64 +46,85 @@
 				</div>
 			</div>
 		</section>
-		<section class="user-reviews">
-			<div class="col-lg-4 p-4 rounded-4 border cadre">
-				<h2 class="text-center">Avis des utilisateurs</h2>
-
-				{# Affichage des trois derniers avis triés par date décroissante #}
-				{% for singleReview in reviews | reverse | slice(0, 3) %}
-					<div class="card m-2 avis mt-xxl-5">
-						<div class="card-header">
-							{{ singleReview.user.pseudo }}
-							<div class="rating">
-								{% for i in 1..5 %}
-									{% if i <= singleReview.rating %}
-										<i class="fas fa-star"></i>
-									{% else %}
-										<i class="far fa-star"></i>
-									{% endif %}
-								{% endfor %}
+		<section>
+			<h1>Nos Catégories</h1>
+			<div class="row">
+				{% for category in categories %}
+					<div class="col-md-4">
+						<div class="card mb-4">
+							<div class="card-body">
+								<h5 class="card-title">{{ category.name }}</h5>
+								<p class="card-text">{{ category.description }}</p>
+								<a href="{{ path('app_category_products', { id: category.id }) }}" class="btn btn-primary">Voir les produits</a>
 							</div>
 						</div>
-						<div class="card-body">
-							<p class="text-muted">{{ singleReview.createdAt|date('d/m/Y') }}</p>
-							<p>{{ singleReview.content }}</p>
-						</div>
 					</div>
-				{% else %}
-					<p class="text-center mt-4">Aucun avis pour le moment.</p>
 				{% endfor %}
-
-				{# Formulaire d'ajout d'avis #}
-				{% if app.user %}
-					{% if reviewForm is not null %}
-						<div class="card container text-center form-control avis mt-xxl-5">
-							{{ form_start(reviewForm) }}
-							<div class="card-body">
-								{{ form_label(reviewForm.content) }}
-								{{ form_widget(reviewForm.content, {'attr': {'placeholder': 'Votre avis...', 'class': 'form-control'}}) }}
-								<div class="form-group">
-									<label>Note</label>
-									<div class="rating" id="review-rating-form">
-										{{ form_widget(reviewForm.rating, {'attr': {'type': 'hidden', 'id': 'review_rating'}}) }}
+			</div>
+		</section>
+		<section class="user-reviews py-5 bg-light">
+			<div class="container">
+				<h2 class="text-center mb-5">Avis des utilisateurs</h2>
+				{# Affichage des trois derniers avis triés par date décroissante #}
+				<div class="row justify-content-center">
+					{% for singleReview in reviews | reverse | slice(0, 3) %}
+						<div class="avis col-12 col-md-6 mb-4">
+							<div class="card shadow-sm h-100">
+								<div class="card-header d-flex justify-content-between">
+									<strong>{{ singleReview.user.pseudo }}</strong>
+									<div class="rating">
 										{% for i in 1..5 %}
-											<i class="far fa-star" data-value="{{ i }}" data-target="form"></i>
+											{% if i <= singleReview.rating %}
+												<i class="fas fa-star"></i>
+											{% else %}
+												<i class="far fa-star"></i>
+											{% endif %}
 										{% endfor %}
 									</div>
 								</div>
+								<div class="card-body">
+									<p class="text-muted mb-2">{{ singleReview.createdAt|date('d/m/Y') }}</p>
+									<p>{{ singleReview.content }}</p>
+								</div>
 							</div>
-							<input type="hidden" name="accept_pseudo" id="accept_pseudo" value="0">
-							<button type="button" class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#confirmModal">
-								Soumettre
-							</button>
-							{{ form_end(reviewForm) }}
 						</div>
+					{% else %}
+						<p class="text-center mt-4">Aucun avis pour le moment.</p>
+					{% endfor %}
+				</div>
+
+				{# Formulaire d'ajout d'avis #}
+				{% if app.user %}
+					<div class="mt-5 mx-auto" style="max-width: 600px;">
+						<div class="card p-4 shadow-sm">
+							{% if reviewForm is not null %}
+								<div class="form-control avis mb-3">
+									{{ form_start(reviewForm) }}
+									<div class="card-body">
+										{{ form_label(reviewForm.content) }}
+										{{ form_widget(reviewForm.content, {'attr': {'placeholder': 'Votre avis...', 'class': 'form-control'}}) }}
+									</div>
+									<div class="mb-3">
+										<label>Note</label>
+										<div class="rating" id="review-rating-form">
+											{{ form_widget(reviewForm.rating, {'attr': {'type': 'hidden', 'id': 'review_rating'}}) }}
+											{% for i in 1..5 %}
+												<i class="far fa-star" data-value="{{ i }}" data-target="form"></i>
+											{% endfor %}
+										</div>
+									</div>
+									<input type="hidden" name="accept_pseudo" id="accept_pseudo" value="0">
+									<button type="button" class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#confirmModal">
+										Soumettre
+									</button>
+									{{ form_end(reviewForm) }}
+								</div>
+							</div>
+						{% endif %}
+					{% else %}
+						<p class="text-center text-warning mt-4">Vous devez être connecté pour laisser un avis.</p>
 					{% endif %}
-				{% else %}
-					<p class="text-center text-warning mt-4">Vous devez être connecté pour laisser un avis.</p>
-				{% endif %}
-
-
+				</div>
 				{# Modal de confirmation pour l'affichage du pseudo #}
 				<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
 					<div class="modal-dialog">
@@ -122,52 +143,34 @@
 						</div>
 					</div>
 				</div>
+			</div>
+		</section>
 
-			</section>
-
-			<section>
-				<h1>Nos Catégories</h1>
-				<div class="row">
-					{% for category in categories %}
-						<div class="col-md-4">
-							<div class="card mb-4">
-								<div class="card-body">
-									<h5 class="card-title">{{ category.name }}</h5>
-									<p class="card-text">{{ category.description }}</p>
-									<a href="{{ path('app_category_products', { id: category.id }) }}" class="btn btn-primary">Voir les produits</a>
-								</div>
-							</div>
-						</div>
-					{% endfor %}
-				</div>
-			</section>
-
-			<!-- Section À propos -->
-			<section class="about-me-section">
-				<div class="container">
-					<div
-						class="row align-items-center">
-						<!-- Image à gauche -->
-						<div class="col-md-6 text-center">
-							<img src="{{ asset('images/nath.jpg') }}" alt="Photo de Nathalie" class="about-me-img">
-						</div>
-						<!-- Texte à droite -->
-						<div class="col-md-6">
-							<h2 class="section-title">À propos de moi</h2>
-							<p class="about-me-text">
-								Je m'appelle Nathalie, et je suis passionnée par l'artisanat et la créativité. Mon objectif est de transformer vos idées en créations uniques et personnalisées qui apportent du bonheur dans votre vie quotidienne.
-							</p>
-							<p class="about-me-text">
-								Chaque création est réalisée avec soin, en mélangeant amour, passion et attention aux détails. Que ce soit pour offrir un cadeau spécial ou simplement pour vous faire plaisir, je suis là pour rendre chaque moment mémorable.
-							</p>
-							<a href="#contact" class="btn btn-primary">Contactez-moi</a>
-						</div>
+		<!-- Section À propos -->
+		<section class="about-me-section">
+			<div class="container">
+				<div
+					class="row align-items-center">
+					<!-- Image à gauche -->
+					<div class="col-md-6 text-center">
+						<img src="{{ asset('images/nath.jpg') }}" alt="Photo de Nathalie" class="about-me-img">
+					</div>
+					<!-- Texte à droite -->
+					<div class="col-md-6">
+						<h2 class="section-title">À propos de moi</h2>
+						<p class="about-me-text">
+							Je m'appelle Nathalie, et je suis passionnée par l'artisanat et la créativité. Mon objectif est de transformer vos idées en créations uniques et personnalisées qui apportent du bonheur dans votre vie quotidienne.
+						</p>
+						<p class="about-me-text">
+							Chaque création est réalisée avec soin, en mélangeant amour, passion et attention aux détails. Que ce soit pour offrir un cadeau spécial ou simplement pour vous faire plaisir, je suis là pour rendre chaque moment mémorable.
+						</p>
+						<a href="#contact" class="btn btn-primary">Contactez-moi</a>
 					</div>
 				</div>
-			</section>
-		</div>
-	{% endblock %}
-	{% block javascripts %}
-		{{ parent() }}
-
-	{% endblock %}
+			</div>
+		</section>
+	</div>
+{% endblock %}
+{% block javascripts %}
+	{{ parent() }}
+{% endblock %}
