@@ -112,19 +112,12 @@ class PaymentController extends AbstractController
 
             $response = $client->execute($request);
 
-            // Logguez la réponse
-            dump($response);
-
             if (isset($response->result->id)) {
                 $orderId = $response->result->id;
                 return $this->redirect("https://www.sandbox.paypal.com/checkoutnow?token=$orderId");
             }
         } catch (\Exception $e) {
             $this->addFlash('error', 'Erreur PayPal : ' . $e->getMessage());
-
-            // Logguez les détails de l'erreur
-            dump($e->getMessage());
-            dump($e->getTraceAsString());
         }
 
         return $this->redirectToRoute('cart_index');
