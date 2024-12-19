@@ -237,7 +237,7 @@ class PaymentController extends AbstractController
 
                 // Envoyer la facture par email
                 $email = (new Email())
-                    ->from('developpeur.web.gard@gmail.com')
+                    ->from('nathcrea.app@gmail.com')
                     ->to($this->getUser()->getEmail())
                     ->subject('Confirmation de commande et facture')
                     ->text('Merci pour votre commande. Veuillez trouver votre facture en pièce jointe.')

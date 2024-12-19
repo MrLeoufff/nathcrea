@@ -65,7 +65,7 @@ class RegistrationController extends AbstractController
                 'app_verify_email',
                 $user,
                 (new TemplatedEmail())
-                    ->from(new Address('developpeur.web.gard@gmail.com', 'NathCrea Support'))
+                    ->from(new Address('nathcrea.app@gmail.com', 'NathCrea Support'))
                     ->to($user->getEmail())
                     ->subject('Confirmez votre adresse e-mail')
                     ->htmlTemplate('registration/confirmation_email.html.twig')
@@ -130,7 +130,7 @@ class RegistrationController extends AbstractController
             'app_verify_email',
             $user,
             (new TemplatedEmail())
-                ->from(new Address('developpeur.web.gard@gmail.com', 'NathCrea Support'))
+                ->from(new Address('nathcrea.app@gmail.com', 'NathCrea Support'))
                 ->to($user->getEmail())
                 ->subject('Confirmez votre adresse e-mail')
                 ->htmlTemplate('registration/confirmation_email.html.twig')
