@@ -1,25 +1,31 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Produits - {{ category.name }}{% endblock %}
+{% block title %}Produits -
+	{{ category.name }}
+{% endblock %}
 
 {% block body %}
-    <h1>Produits dans la catégorie : {{ category.name }}</h1>
-    <div class="row">
-        {% for product in products %}
-            <div class="col-md-4">
-                <div class="card mb-4">
-                    <img src="{{ asset(product.image) }}" class="card-img-top" alt="{{ product.name }}">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ product.name }}</h5>
-                        <p class="card-text">{{ product.description }}</p>
-                        <p class="card-text"><strong>{{ product.price|number_format(2, ',', ' ') }} €</strong></p>
-                        <a href="{{ path('app_product_detail', { id: product.id }) }}" class="btn btn-info">Voir le détail</a>
-                        {% if app.user %}
-                            <a href="{{ path('app_order_product', { id: product.id }) }}" class="btn btn-success">Commander</a>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        {% endfor %}
-    </div>
+	<h1>Produits dans la catégorie :
+		{{ category.name }}</h1>
+	<div class="row">
+		{% for product in products %}
+			<div class="col-md-4">
+				<div class="card mb-4">
+					<img src="{{ asset('uploads/images/' ~ product.image) }}" class="card-img-top" alt="{{ product.name }}">
+					<div class="card-body">
+						<h5 class="card-title">{{ product.name }}</h5>
+						<p class="card-text">{{ product.description }}</p>
+						<p class="card-text">
+							<strong>{{ product.price|number_format(2, ',', ' ') }}
+								€</strong>
+						</p>
+						<a href="{{ path('app_product_detail', { id: product.id }) }}" class="btn btn-info">Voir le détail</a>
+						{% if app.user %}
+							<a href="{{ path('app_order_product', { id: product.id }) }}" class="btn btn-success">Commander</a>
+						{% endif %}
+					</div>
+				</div>
+			</div>
+		{% endfor %}
+	</div>
 {% endblock %}

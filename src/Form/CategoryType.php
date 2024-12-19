@@ -22,7 +22,7 @@ class CategoryType extends AbstractType
                 'mapped' => false,
                 'constraints' => [
                     new File([
-                        'maxSize' => '2M',
+                        'maxSize' => '50M',
                         'mimeTypes' => [
                             'image/jpeg',
                             'image/png',
