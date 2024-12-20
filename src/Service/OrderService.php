@@ -21,6 +21,7 @@ class OrderService
      */
     public function createOrder(User $user, array $cartSummary, string $paypalOrderId): Order
     {
+        // Création de la commande principale
         $order = new Order();
         $order->setOrderNumber($this->generateOrderNumber());
         $order->setUser($user);
@@ -33,11 +34,20 @@ class OrderService
         foreach ($cartSummary['items'] as $item) {
             $orderItem = new OrderItem();
             $orderItem->setProduct($item['product']);
+            $orderItem->setProductName($item['product']->getName()); // Ajout du nom du produit
             $orderItem->setQuantity($item['quantity']);
             $orderItem->setUnitPrice($item['unit_price']);
             $orderItem->setTotalPrice($item['unit_price'] * $item['quantity']);
+            $orderItem->setOrderRef($order); // Lier l'article à la commande
+
+            // Persist chaque article
+            $this->entityManager->persist($orderItem);
+
+            // Ajouter l'article à la collection d'articles de la commande
+            $order->addOrderItem($orderItem);
         }
 
+        // Persist de la commande principale
         $this->entityManager->persist($order);
         $this->entityManager->flush();
 
