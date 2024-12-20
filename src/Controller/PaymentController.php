@@ -143,7 +143,7 @@ class PaymentController extends AbstractController
 
                 // Envoi de l'email
                 $email = (new TemplatedEmail())
-                    ->from('nath-crea.app@gmail.com') // L'expéditeur
+                    ->from('nathcrea.app@gmail.com') // L'expéditeur
                     ->to($this->getUser()->getEmail()) // Le destinataire
                     ->subject('Confirmation de votre commande') // Sujet de l'email
                     ->htmlTemplate('emails/order_confirmation.html.twig') // Le fichier Twig pour le contenu HTML
