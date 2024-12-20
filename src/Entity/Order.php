@@ -17,7 +17,7 @@ class Order
     private ?int $id = null;
 
     #[ORM\Column(length: 255, unique: true)]
-    private ?string $orderNumber;
+    private ?string $orderNumber = null;
 
     #[ORM\Column(length: 50)]
     private ?string $status = 'pending';
@@ -32,12 +32,13 @@ class Order
     private ?string $paypalOrderId = null;
 
     #[ORM\ManyToOne(inversedBy: 'orders')]
+    #[ORM\JoinColumn(onDelete: 'SET NULL')]
     private ?User $user = null;
 
     /**
      * @var Collection<int, OrderItem>
      */
-    #[ORM\OneToMany(targetEntity: OrderItem::class, mappedBy: 'orderRef')]
+    #[ORM\OneToMany(targetEntity: OrderItem::class, mappedBy: 'orderRef', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $orderItems;
 
     public function __construct()
@@ -135,7 +136,7 @@ class Order
     {
         if (!$this->orderItems->contains($orderItem)) {
             $this->orderItems->add($orderItem);
-            $orderItem->setOrderRef($this);
+            $orderItem->setOrderRef($this); // Maintien de la relation bidirectionnelle
         }
 
         return $this;
@@ -144,12 +145,22 @@ class Order
     public function removeOrderItem(OrderItem $orderItem): static
     {
         if ($this->orderItems->removeElement($orderItem)) {
-            // set the owning side to null (unless already changed)
+            // Dissocier l'OrderItem de l'Order si nécessaire
             if ($orderItem->getOrderRef() === $this) {
                 $orderItem->setOrderRef(null);
             }
         }
 
         return $this;
+    }
+
+    public function __toString(): string
+    {
+        return sprintf(
+            'Order #%s: [Status: %s, Total: %.2f]',
+            $this->orderNumber ?? 'N/A',
+            $this->status,
+            $this->totalAmount ?? 0
+        );
     }
 }

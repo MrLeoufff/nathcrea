@@ -2,25 +2,20 @@
 
 namespace App\Controller;
 
-use App\Entity\Order;
-use App\Entity\OrderItem;
-use App\Entity\Product;
 use App\Service\CartService;
-use App\Service\InvoiceGenerator;
-use App\Service\PayPalService;
+use App\Service\OrderService;
+use App\Service\PayPalRestService;
 use Doctrine\ORM\EntityManagerInterface;
-use Psr\Log\LoggerInterface;
+use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mailer\MailerInterface;
-use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Uid\Uuid;
 
 class PaymentController extends AbstractController
 {
-    private PayPalService $payPalService;
+    private PayPalRestService $payPalService;
     private CartService $cartService;
 
     private function validateOrderData(array $orderData): void
@@ -55,65 +50,54 @@ class PaymentController extends AbstractController
         }
     }
 
-    public function __construct(PayPalService $payPalService, CartService $cartService)
+    public function __construct(PayPalRestService $payPalRestService, CartService $cartService, OrderService $orderService)
     {
-        $this->payPalService = $payPalService;
+        $this->payPalRestService = $payPalRestService;
         $this->cartService = $cartService;
+        $this->orderService = $orderService;
     }
 
     #[Route('/payment', name: 'app_payment')]
-    public function createPayment(EntityManagerInterface $entityManager, LoggerInterface $logger): Response
+    public function createPayment(EntityManagerInterface $entityManager): Response
     {
         $cartSummary = $this->cartService->getCartSummary($entityManager);
-        $logger->info('Cart Summary: ' . json_encode($cartSummary));
 
-        // Construire les données de la commande pour PayPal
         $orderData = [
             'intent' => 'CAPTURE',
-            'purchase_units' => [
-                [
-                    'description' => 'Votre panier',
-                    'amount' => [
-                        'currency_code' => 'EUR',
-                        'value' => $cartSummary['total'], // Total global
-                        'breakdown' => [
-                            'item_total' => [
-                                'currency_code' => 'EUR',
-                                'value' => $cartSummary['total'], // Total des articles
-                            ],
+            'purchase_units' => [[
+                'description' => 'Votre panier',
+                'amount' => [
+                    'currency_code' => 'EUR',
+                    'value' => number_format($cartSummary['total'], 2, '.', ''),
+                    'breakdown' => [
+                        'item_total' => [
+                            'currency_code' => 'EUR',
+                            'value' => number_format($cartSummary['total'], 2, '.', ''), // Utilisation correcte
                         ],
                     ],
-                    'items' => array_map(function ($item) {
-                        return [
-                            'name' => $item['product']->getName(),
-                            'description' => $item['product']->getDescription(),
-                            'unit_amount' => [
-                                'currency_code' => 'EUR',
-                                'value' => number_format($item['product']->getPrice(), 2, '.', ''),
-                            ],
-                            'quantity' => $item['quantity'],
-                        ];
-                    }, $this->cartService->getCartItems($entityManager)),
                 ],
-            ],
+                'items' => array_map(function ($item) {
+                    return [
+                        'name' => $item['product']->getName(),
+                        'quantity' => $item['quantity'],
+                        'unit_amount' => [
+                            'currency_code' => 'EUR',
+                            'value' => number_format($item['unit_price'], 2, '.', ''), // Correction ici
+                        ],
+                    ];
+                }, $cartSummary['items']),
+            ]],
             'application_context' => [
                 'cancel_url' => $this->generateUrl('cart_payment_cancel', [], 0),
                 'return_url' => $this->generateUrl('cart_payment_success', [], 0),
             ],
         ];
 
-        $logger->info('PayPal Order Data: ' . json_encode($orderData));
-
         try {
-            $client = $this->payPalService->getClient();
-            $request = new \PayPalCheckoutSdk\Orders\OrdersCreateRequest();
-            $request->prefer('return=representation');
-            $request->body = $orderData;
+            $response = $this->payPalRestService->createOrder($orderData);
 
-            $response = $client->execute($request);
-
-            if (isset($response->result->id)) {
-                $orderId = $response->result->id;
+            if (isset($response['id'])) {
+                $orderId = $response['id'];
                 return $this->redirect("https://www.sandbox.paypal.com/checkoutnow?token=$orderId");
             }
         } catch (\Exception $e) {
@@ -125,127 +109,63 @@ class PaymentController extends AbstractController
 
     #[Route('/payment/success', name: 'cart_payment_success')]
     public function paymentSuccess(
-        EntityManagerInterface $entityManager,
         Request $request,
-        PayPalService $payPalService,
-        LoggerInterface $logger,
-        InvoiceGenerator $invoiceGenerator,
+        EntityManagerInterface $entityManager,
         MailerInterface $mailer
     ): Response {
         $orderId = $request->query->get('token');
+
         if (!$orderId) {
             $this->addFlash('error', 'Identifiant de commande introuvable.');
             return $this->redirectToRoute('cart_index');
         }
 
-        $logger->info('Traitement du paiement pour la commande PayPal : ' . $orderId);
-
         try {
-            $client = $payPalService->getClient();
-            $captureRequest = new \PayPalCheckoutSdk\Orders\OrdersCaptureRequest($orderId);
-            $captureRequest->prefer('return=representation');
-            $response = $client->execute($captureRequest);
-            $logger->info('Réponse PayPal reçue : ' . json_encode($response->result));
+            $response = $this->payPalRestService->captureOrder($orderId);
 
-            if ($response->result->status === 'COMPLETED') {
-                // Créez une nouvelle commande
-                $order = new Order();
-                $order->setOrderNumber(Uuid::v4()->toRfc4122());
-                $order->setPaypalOrderId($response->result->id);
-                $order->setStatus("PENDING");
-                $order->setTotalAmount(array_sum(array_map(
-                    fn($unit) => (float) $unit->amount->value,
-                    $response->result->purchase_units
-                )));
-                $order->setUser($this->getUser());
-                $entityManager->persist($order);
+            if ($response['status'] === 'COMPLETED') {
+                // Récupération du récapitulatif du panier
+                $cartSummary = $this->cartService->getCartSummary($entityManager);
 
-                // Parcourir les unités d'achat et mettre à jour le stock
-                foreach ($response->result->purchase_units as $unit) {
-                    $description = $unit->description ?? null;
-                    $amountValue = $unit->amount->value ?? null;
+                // Création de la commande
+                $order = $this->orderService->createOrder(
+                    $this->getUser(),
+                    $cartSummary,
+                    $orderId
+                );
 
-                    if (!$description || !$amountValue) {
-                        throw new \Exception('Données manquantes pour l\'unité d\'achat : ' . json_encode($unit));
-                    }
-
-                    // Rechercher le produit dans la base de données
-                    $product = $entityManager->getRepository(Product::class)->findOneBy(['name' => $description]);
-
-                    if (!$product) {
-                        throw new \Exception('Produit introuvable dans la base de données : ' . $description);
-                    }
-
-                    // Vérifier la quantité commandée
-                    $cartItems = $this->cartService->getCartItems($entityManager);
-                    $cartItem = array_filter($cartItems, fn($item) => $item['product']->getName() === $description);
-
-                    if (empty($cartItem)) {
-                        throw new \Exception('Impossible de trouver l\'article correspondant dans le panier : ' . $description);
-                    }
-
-                    $quantity = (int) $cartItem[array_key_first($cartItem)]['quantity'];
-
-                    // Vérifier et mettre à jour le stock
-                    $newStock = $product->getStock() - $quantity;
-                    if ($newStock < 0) {
-                        throw new \Exception('Stock insuffisant pour le produit ' . $product->getName());
-                    }
-                    $product->setStock($newStock);
-
-                    // Ajouter l'article à la commande
-                    $orderItem = new OrderItem();
-                    $orderItem->setProductName($product->getName());
-                    $orderItem->setQuantity($quantity);
-                    $orderItem->setUnitPrice((float) $amountValue / $quantity);
-                    $orderItem->setTotalPrice((float) $amountValue);
-                    $orderItem->setOrderRef($order);
-                    $entityManager->persist($orderItem);
-                }
-
-                // Sauvegarder la commande et vider le panier
+                // Mise à jour du statut de la commande
+                $order->setStatus('completed');
                 $entityManager->flush();
+
+                // Nettoyer le panier après paiement réussi
                 $this->cartService->cleanCart();
 
-                // Générer la facture
-                $invoiceItems = array_map(function ($item) {
-                    return [
-                        'name' => $item['product']->getName(),
-                        'quantity' => $item['quantity'],
-                        'unit_price' => $item['product']->getPrice(),
-                        'total_price' => $item['quantity'] * $item['product']->getPrice(),
-                    ];
-                }, $cartItems);
-
-                $invoicePath = $invoiceGenerator->generateInvoice([
-                    'id' => $order->getId(),
-                    'date' => new \DateTime(),
-                    'customer' => [
-                        'name' => $this->getUser()->getPseudo(),
-                        'email' => $this->getUser()->getEmail(),
-                    ],
-                    'items' => $invoiceItems,
-                    'total' => $order->getTotalAmount(),
-                ]);
-
-                // Envoyer la facture par email
-                $email = (new Email())
-                    ->from('nathcrea.app@gmail.com')
-                    ->to($this->getUser()->getEmail())
-                    ->subject('Confirmation de commande et facture')
-                    ->text('Merci pour votre commande. Veuillez trouver votre facture en pièce jointe.')
-                    ->attachFromPath($invoicePath);
-
+                // Envoi de l'email
+                $email = (new TemplatedEmail())
+                    ->from('nath-crea.app@gmail.com') // L'expéditeur
+                    ->to($this->getUser()->getEmail()) // Le destinataire
+                    ->subject('Confirmation de votre commande') // Sujet de l'email
+                    ->htmlTemplate('emails/order_confirmation.html.twig') // Le fichier Twig pour le contenu HTML
+                    ->context([
+                        'user' => [
+                            'firstName' => $this->getUser()->getFirstName(),
+                            'lastName' => $this->getUser()->getLastName(),
+                            'address' => $this->getUser()->getAddress(),
+                        ],
+                        'order' => [
+                            'items' => $cartSummary['items'],
+                            'totalAmount' => $cartSummary['total'],
+                        ],
+                    ]);
                 $mailer->send($email);
 
-                $logger->info('Commande enregistrée et panier vidé.');
-                $this->addFlash('success', 'Votre paiement a été validé avec succès.');
+                $this->addFlash('success', 'Paiement validé avec succès.');
                 return $this->redirectToRoute('app_order_confirmation', ['orderId' => $order->getId()]);
             }
 
-            throw new \Exception("Le paiement n'a pas été complété.");
+            throw new \Exception('Paiement non complété.');
         } catch (\Exception $e) {
-            $logger->error('Erreur lors du traitement du paiement : ' . $e->getMessage());
             $this->addFlash('error', 'Erreur lors de la validation du paiement : ' . $e->getMessage());
             return $this->redirectToRoute('cart_index');
         }

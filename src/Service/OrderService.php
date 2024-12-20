@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Entity\Order;
+use App\Entity\OrderItem;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -18,15 +19,24 @@ class OrderService
     /**
      * Créer une commande pour un utilisateur donné.
      */
-    public function createOrder(User $user): Order
+    public function createOrder(User $user, array $cartSummary, string $paypalOrderId): Order
     {
         $order = new Order();
-
-        // Générer un numéro unique
-        $orderNumber = $this->generateOrderNumber();
-        $order->setOrderNumber($orderNumber);
+        $order->setOrderNumber($this->generateOrderNumber());
         $order->setUser($user);
-        $order->setStatus('pending'); // Statut par défaut
+        $order->setPaypalOrderId($paypalOrderId);
+        $order->setTotalAmount($cartSummary['total']);
+        $order->setStatus('pending');
+        $order->setCreatedAt(new \DateTimeImmutable());
+
+        // Ajoutez les articles du panier à la commande
+        foreach ($cartSummary['items'] as $item) {
+            $orderItem = new OrderItem();
+            $orderItem->setProduct($item['product']);
+            $orderItem->setQuantity($item['quantity']);
+            $orderItem->setUnitPrice($item['unit_price']);
+            $orderItem->setTotalPrice($item['unit_price'] * $item['quantity']);
+        }
 
         $this->entityManager->persist($order);
         $this->entityManager->flush();

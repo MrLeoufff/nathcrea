@@ -3,8 +3,10 @@
 namespace App\Controller;
 
 use App\Entity\Order;
+use App\Service\CartService;
 use App\Service\OrderService;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -12,10 +14,14 @@ use Symfony\Component\Routing\Annotation\Route;
 class OrderController extends AbstractController
 {
     private OrderService $orderService;
+    private LoggerInterface $logger;
+    private CartService $cartService;
 
-    public function __construct(OrderService $orderService)
+    public function __construct(OrderService $orderService, LoggerInterface $logger, CartService $cartService)
     {
         $this->orderService = $orderService;
+        $this->logger = $logger;
+        $this->cartService = $cartService;
     }
 
     #[Route('/orders', name: 'app_orders')]
@@ -41,15 +47,21 @@ class OrderController extends AbstractController
     }
 
     #[Route('/order/create', name: 'order_create')]
-    public function createOrder(): Response
+    public function createOrder(EntityManagerInterface $entityManager): Response
     {
         $user = $this->getUser(); // Assurez-vous que l'utilisateur est connecté
         if (!$user) {
             throw $this->createAccessDeniedException('Vous devez être connecté pour passer une commande.');
         }
 
-        // Créer une commande via le service
-        $order = $this->orderService->createOrder($user);
+        // Récupérez le récapitulatif du panier
+        $cartSummary = $this->cartService->getCartSummary($entityManager);
+
+        // Fournissez un ID PayPal fictif si ce n'est pas une commande PayPal
+        $paypalOrderId = 'manual-' . uniqid();
+
+        // Créez la commande via le service
+        $order = $this->orderService->createOrder($user, $cartSummary, $paypalOrderId);
 
         $this->addFlash('success', "Commande créée avec succès : {$order->getOrderNumber()}");
 
@@ -57,12 +69,19 @@ class OrderController extends AbstractController
     }
 
     #[Route('/order/confirmation/{orderId}', name: 'app_order_confirmation')]
-    public function orderConfirmation(EntityManagerInterface $entityManager, int $orderId): Response
+    public function orderConfirmation(EntityManagerInterface $entityManager, string $orderId): Response
     {
-        $order = $entityManager->getRepository(Order::class)->find($orderId);
+        $this->logger->info("Recherche de la commande avec ID ou référence : {$orderId}");
+
+        $order = $entityManager->getRepository(Order::class)->find((int) $orderId);
 
         if (!$order) {
-            throw $this->createNotFoundException("La commande avec l'ID {$orderId} est introuvable.");
+            $order = $entityManager->getRepository(Order::class)->findOneBy(['paypalOrderId' => $orderId]);
+        }
+
+        if (!$order) {
+            $this->logger->error("Commande introuvable avec l'ID ou la référence : {$orderId}");
+            throw $this->createNotFoundException("La commande avec l'ID ou la référence {$orderId} est introuvable.");
         }
 
         return $this->render('order/confirmation.html.twig', [

@@ -24,7 +24,9 @@ services:
             - '../src/DependencyInjection/'
             - '../src/Entity/'
             - '../src/Kernel.php'
-    App\Service\PayPalService:
+    App\Service\PayPalRestService:
+        autowire: true
+        autoconfigure: true
         arguments:
             $clientId: '%env(PAYPAL_CLIENT_ID)%'
             $clientSecret: '%env(PAYPAL_SECRET)%'
@@ -32,6 +34,10 @@ services:
     App\Service\ForgetMeService:
         arguments:
             $archiveDir: '%kernel.project_dir%/public/uploads/invoices_archives'
+    App\Service\OrderService:
+        autowire: true
+        autoconfigure: true
+
 
 
 

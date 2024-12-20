@@ -5,19 +5,23 @@ namespace App\Controller;
 use App\Entity\Product;
 use App\Service\CartService;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 #[Route('/cart')]
 class CartController extends AbstractController
 {
     private CartService $cartService;
+    private LoggerInterface $logger;
 
-    public function __construct(CartService $cartService)
+    public function __construct(CartService $cartService, LoggerInterface $logger)
     {
         $this->cartService = $cartService;
+        $this->logger = $logger;
     }
 
     #[Route('/', name: 'cart_index')]
@@ -87,9 +91,12 @@ class CartController extends AbstractController
     }
 
     #[Route('/validate', name: 'cart_validate')]
-    public function validateCart(EntityManagerInterface $entityManager, \App\Service\PayPalService $payPalService): Response
-    {
-        // Étape 1 : Récupérer les articles et total du panier
+    public function validateCart(
+        EntityManagerInterface $entityManager,
+        \App\Service\PayPalRestService $payPalService,
+        LoggerInterface $logger
+    ): Response {
+        // Étape 1 : Récupérer les articles et le total du panier
         $cartItems = $this->cartService->getCartItems($entityManager);
         $total = $this->cartService->getTotal($entityManager);
 
@@ -112,60 +119,74 @@ class CartController extends AbstractController
 
         // Étape 2 : Construire les unités d'achat (purchase_units)
         $purchaseUnits = [];
-        foreach ($cartItems as $index => $item) {
-            // Validation des données du produit
-            if (!isset($item['product']) || !isset($item['quantity'])) {
-                $this->addFlash('error', 'Données incorrectes dans le panier.');
-                return $this->redirectToRoute('cart_index');
-            }
-
+        foreach ($cartItems as $item) {
             $purchaseUnits[] = [
-                'reference_id' => "unit_" . ($index + 1), // Identifiant unique
-                'description' => mb_substr($item['product']->getName(), 0, 127),
-                'amount' => [
+                'name' => mb_substr($item['product']->getName(), 0, 127),
+                'description' => mb_substr($item['product']->getDescription(), 0, 127),
+                'unit_amount' => [
                     'currency_code' => 'EUR',
-                    'value' => number_format($item['product']->getPrice() * $item['quantity'], 2, '.', ''),
+                    'value' => number_format($item['product']->getPrice(), 2, '.', ''),
                 ],
                 'quantity' => (string) $item['quantity'],
             ];
         }
 
-        // Validation des totaux (optionnelle, pour éviter les incohérences)
-        $totalCalculated = array_reduce($purchaseUnits, function ($carry, $unit) {
-            return $carry + (float) $unit['amount']['value'];
-        }, 0);
-
-        if (number_format($total, 2, '.', '') != number_format($totalCalculated, 2, '.', '')) {
-            $this->addFlash('error', 'Erreur dans le calcul des totaux.');
-            return $this->redirectToRoute('cart_index');
-        }
-
         // Étape 3 : Préparer les données pour PayPal
         $orderData = [
             'intent' => 'CAPTURE',
-            'purchase_units' => $purchaseUnits,
+            'purchase_units' => [[
+                'description' => 'Votre panier',
+                'amount' => [
+                    'currency_code' => 'EUR',
+                    'value' => number_format($total, 2, '.', ''), // Total global du panier
+                    'breakdown' => [
+                        'item_total' => [
+                            'currency_code' => 'EUR',
+                            'value' => number_format(array_sum(array_map(function ($item) {
+                                return $item['product']->getPrice() * $item['quantity'];
+                            }, $cartItems)), 2, '.', ''), // Total des articles
+                        ],
+                    ],
+                ],
+                'items' => array_map(function ($item) {
+                    return [
+                        'name' => mb_substr($item['product']->getName(), 0, 127),
+                        'description' => mb_substr($item['product']->getDescription(), 0, 127),
+                        'unit_amount' => [
+                            'currency_code' => 'EUR',
+                            'value' => number_format($item['product']->getPrice(), 2, '.', ''),
+                        ],
+                        'quantity' => (string) $item['quantity'],
+                    ];
+                }, $cartItems),
+            ]],
             'application_context' => [
-                'cancel_url' => $this->generateUrl('cart_payment_cancel', [], 0),
-                'return_url' => $this->generateUrl('cart_payment_success', [], 0),
+                'cancel_url' => $this->generateUrl('cart_payment_cancel', [], UrlGeneratorInterface::ABSOLUTE_URL),
+                'return_url' => $this->generateUrl('cart_payment_success', [], UrlGeneratorInterface::ABSOLUTE_URL),
             ],
         ];
 
         try {
             // Étape 4 : Créer la commande avec PayPal
-            $client = $payPalService->getClient();
-            $request = new \PayPalCheckoutSdk\Orders\OrdersCreateRequest();
-            $request->prefer('return=representation');
-            $request->body = $orderData;
+            $this->logger->info('PayPal Order Data: ' . json_encode($orderData)); // Journaliser les données envoyées
+            $response = $payPalService->createOrder($orderData);
 
-            $response = $client->execute($request);
+            // Étape 5 : Vérifier la réponse et rediriger l'utilisateur
+            if (isset($response['id'])) {
+                return $this->redirect("https://www.sandbox.paypal.com/checkoutnow?token=" . $response['id']);
+            }
 
-            // Étape 5 : Récupérer l'ID de la commande et rediriger l'utilisateur
-            $orderId = $response->result->id;
-
-            return $this->redirect("https://www.sandbox.paypal.com/checkoutnow?token=$orderId");
+            throw new \RuntimeException('Impossible de créer la commande PayPal.');
         } catch (\Exception $e) {
             // Étape 6 : Gestion des erreurs
-            $this->addFlash('error', 'Erreur lors de la validation du panier : ' . $e->getMessage());
+            if ($e instanceof \Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface) {
+                $errorResponse = $e->getResponse()->toArray(false);
+                $logger->error('Erreur PayPal : ' . json_encode($errorResponse));
+                $this->addFlash('error', 'Erreur PayPal : ' . $errorResponse['message'] ?? 'Erreur inconnue.');
+            } else {
+                $logger->error('Erreur générale : ' . $e->getMessage());
+            }
+
             return $this->redirectToRoute('cart_index');
         }
     }

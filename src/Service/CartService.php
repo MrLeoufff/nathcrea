@@ -21,18 +21,26 @@ class CartService
             throw new \InvalidArgumentException('La quantité doit être supérieure à 0.');
         }
 
-        $cart = $this->session->get('cart', []);
+        if (!$this->isStockAvailable($product, $quantity)) {
+            throw new \LogicException(sprintf('Stock insuffisant pour le produit : %s.', $product->getName()));
+        }
 
+        $cart = $this->session->get('cart', []);
         $productId = $product->getId();
 
         if (isset($cart[$productId])) {
-            $cart[$productId] += $quantity;
+            $newQuantity = $cart[$productId] + $quantity;
+
+            if (!$this->isStockAvailable($product, $newQuantity)) {
+                throw new \LogicException(sprintf('Stock insuffisant pour le produit : %s.', $product->getName()));
+            }
+
+            $cart[$productId] = $newQuantity;
         } else {
             $cart[$productId] = $quantity;
         }
 
         $this->session->set('cart', $cart);
-
     }
 
     public function getCartItems(EntityManagerInterface $entityManager): array
@@ -42,12 +50,14 @@ class CartService
 
         $cartItems = [];
         foreach ($products as $product) {
-            $productId = $product->getId();
-            if (isset($cart[$productId]) && is_int($cart[$productId])) {
-                $cartItems[] = [
-                    'product' => $product,
-                    'quantity' => $cart[$productId],
-                ];
+            if ($product->getStock() > 0) {
+                $productId = $product->getId();
+                if (isset($cart[$productId]) && is_int($cart[$productId])) {
+                    $cartItems[] = [
+                        'product' => $product,
+                        'quantity' => $cart[$productId],
+                    ];
+                }
             }
         }
 
@@ -86,36 +96,25 @@ class CartService
         foreach ($cart as $productId => $quantity) {
             $product = $entityManager->getRepository(Product::class)->find($productId);
 
-            if ($product && $quantity > 0) {
-                $price = (float) $product->getPrice();
-
-                if (!is_numeric($price)) {
-                    throw new \LogicException(sprintf('Le prix du produit ID %d n\'est pas valide : %s', $product->getId(), json_encode($price)));
-                }
-
-                $cartItems[] = [
-                    'name' => $product->getName(),
-                    'description' => substr($product->getDescription(), 0, 127), // Limite PayPal
-                    'unit_amount' => [
-                        'currency_code' => 'EUR',
-                        'value' => number_format((float) $price, 2, '.', ''), // Assurez-vous que le prix est un float
-                    ],
-                    'quantity' => (int) $quantity,
-                ];
-
-                $total += (float) $price * (int) $quantity;
+            if (!$product || $quantity > $product->getStock()) {
+                throw new \LogicException("Le produit avec l'ID {$productId} est invalide ou en rupture de stock.");
             }
 
-        }
+            $price = $product->getPrice();
 
-        dump([
-            'items' => $cartItems,
-            'total' => $total,
-        ]);
+            $cartItems[] = [
+                'product' => $product,
+                'quantity' => $quantity,
+                'unit_price' => $price,
+                'total' => $price * $quantity,
+            ];
+
+            $total += $price * $quantity;
+        }
 
         return [
             'items' => $cartItems,
-            'total' => number_format($total, 2, '.', ''), // Format PayPal
+            'total' => number_format($total, 2, '.', ''),
         ];
     }
 
@@ -124,4 +123,13 @@ class CartService
         $this->session->remove('cart');
     }
 
+    public function isStockAvailable(Product $product, int $quantity): bool
+    {
+        return $product->getStock() >= $quantity;
+    }
+
+    public function getTotalQuantity(): int
+    {
+        return array_sum($this->getCart());
+    }
 }
