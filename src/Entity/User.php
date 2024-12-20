@@ -286,4 +286,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         return $this->email;
     }
+
+    public function generateResetToken(): string
+    {
+        $this->confirmationToken = bin2hex(random_bytes(32));
+        return $this->confirmationToken;
+    }
 }

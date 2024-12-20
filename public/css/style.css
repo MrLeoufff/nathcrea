@@ -172,17 +172,17 @@ html, body {
 
 /* Cartes de catégories */
 .category-card {
-    border: 2px solid #D4AF37; /* Bordure dorée */
+    border: 2px solid #D4AF37; 
     border-radius: 15px;
-    background-color: #FFF; /* Fond blanc */
+    background-color: #FFF; 
     overflow: hidden;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Ombre légère */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); 
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .category-card:hover {
-    transform: scale(1.05); /* Agrandissement au survol */
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); /* Accentuation de l'ombre */
+    transform: scale(1.05); 
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); 
 }
 
 /* Image des catégories */
@@ -191,7 +191,7 @@ html, body {
     height: 200px;
     object-fit: cover;
     border-radius: 15px;
-    border-bottom: 2px solid #D4AF37; /* Ligne dorée sous l'image */
+    border-bottom: 2px solid #D4AF37; 
 }
 
 /* Informations des catégories */
@@ -209,7 +209,7 @@ html, body {
 
 .category-description {
     font-size: 1rem;
-    color: #666; /* Texte gris */
+    color: #666; 
     margin-bottom: 1rem;
 }
 
@@ -223,7 +223,7 @@ html, body {
 
 /* Boutons Voir Plus */
 .category-info .btn {
-    background-color: #69C9D0; /* Bleu clair inspiré du logo */
+    background-color: #69C9D0;
     color: #FFF;
     font-weight: bold;
     padding: 0.8rem 1.5rem;
@@ -232,33 +232,33 @@ html, body {
 }
 
 .category-info .btn:hover {
-    background-color: #57AEB8; /* Bleu légèrement plus sombre */
+    background-color: #57AEB8;
     transform: scale(1.1);
 }
 
 /* Section À propos de moi */
 .about-me-section {
-    background-color: #F5F5F5; /* Fond clair */
+    background-color: #F5F5F5; 
     padding: 4rem 0;
 }
 
 .about-me-img {
     width: 80%;
     max-width: 300px;
-    border-radius: 50%; /* Image circulaire */
-    border: 5px solid #D4AF37; /* Bordure dorée */
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); /* Ombre subtile */
+    border-radius: 50%; 
+    border: 5px solid #D4AF37; 
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); 
 }
 
 .about-me-text {
     font-size: 1.2rem;
     line-height: 1.8;
-    color: #2E2E38; /* Texte sombre */
+    color: #2E2E38; 
     margin-bottom: 1.5rem;
 }
 
 .about-me-section .btn {
-    background-color: #D4AF37; /* Doré pour le bouton */
+    background-color: #D4AF37; 
     color: #2E2E38;
     font-weight: bold;
     border: none;

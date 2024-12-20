@@ -1,0 +1,9 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+	<h1>Réinitialisation de mot de passe</h1>
+	{{ form_start(form) }}
+	{{ form_row(form.email) }}
+	<button class="btn">Envoyer</button>
+	{{ form_end(form) }}
+{% endblock %}
