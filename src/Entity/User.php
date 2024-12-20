@@ -57,10 +57,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length : 255, nullable: true)]
     private ?string $confirmationToken = null;
 
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?\DateTime $tokenExpiresAt = null;
+
     /**
      * @var Collection<int, Order>
      */
-    #[ORM\OneToMany(targetEntity: Order::class, mappedBy: 'user')]
+    #[ORM\OneToMany(targetEntity : Order::class, mappedBy: 'user')]
     private Collection $orders;
 
     /**
@@ -277,7 +280,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function eraseCredentials(): void
+    public function getTokenExpiresAt(): ?\DateTime
+    {
+        return $this->tokenExpiresAt;
+    }
+
+    public function setTokenExpiresAt( ? \DateTime $tokenExpiresAt) : self
+    {
+        $this->tokenExpiresAt = $tokenExpiresAt;
+        return $this;
+    }
+
+    public function eraseCredentials() : void
     {
         // TODO: Implement eraseCredentials() method.
     }
