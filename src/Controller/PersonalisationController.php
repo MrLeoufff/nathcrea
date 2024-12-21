@@ -31,32 +31,31 @@ class PersonalisationController extends AbstractController
         // Récupération et validation de l'email de l'utilisateur
         $userEmail = $user->getEmail();
         if (!filter_var($userEmail, FILTER_VALIDATE_EMAIL)) {
-            $userEmail = 'noreply@nathcrea.com'; // Adresse générique en cas d'email invalide
         }
 
         if ($request->isMethod('POST')) {
             $personalisationData = $request->request->all();
 
             // Création de l'email
-            $email = (new Email())
-                ->from($userEmail) // Utilise l'email validé ou l'adresse générique
-                ->to('nathcrea.app@gmail.com') // Adresse destinataire
-                ->subject('Nouvelle demande de personnalisation')
-                ->text(sprintf(
-                    "Type : %s\nTaille : %s\nCouleur : %s\nNotes : %s",
-                    $personalisationData['type'] ?? 'Non spécifié',
-                    $personalisationData['size'] ?? 'Non spécifié',
-                    $personalisationData['color'] ?? 'Non spécifié',
-                    $personalisationData['additional_notes'] ?? 'Aucune'
-                ));
-
             try {
-                // Envoi de l'email
+                $email = (new Email())
+                    ->from('noreply@votre-domaine.com') // Adresse valide
+                    ->replyTo($userEmail) // Adresse utilisateur pour répondre
+                    ->to('nathcrea.app@gmail.com') // Adresse de destination
+                    ->subject('Nouvelle demande de personnalisation')
+                    ->text(sprintf(
+                        "Type : %s\nTaille : %s\nCouleur : %s\nNotes : %s",
+                        $personalisationData['type'] ?? 'Non spécifié',
+                        $personalisationData['size'] ?? 'Non spécifié',
+                        $personalisationData['color'] ?? 'Non spécifié',
+                        $personalisationData['additional_notes'] ?? 'Aucune'
+                    ));
+
                 $mailer->send($email);
                 $this->addFlash('success', 'Votre demande a bien été envoyée.');
             } catch (TransportExceptionInterface $e) {
-                // Gestion des erreurs d'envoi
-                $this->addFlash('error', 'Une erreur est survenue lors de l\'envoi de votre demande. Veuillez réessayer plus tard.');
+                // Loggez l'erreur pour analyser le problème
+                $this->addFlash('error', 'Une erreur est survenue lors de l\'envoi.');
             }
 
             // Redirection vers une route

@@ -5,6 +5,7 @@ namespace App\Controller;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Annotation\Route;
@@ -23,20 +24,28 @@ class ContactController extends AbstractController
             $message = $contactData['message'] ?? 'Aucun message fourni';
 
             // Création de l'email
-            $email = (new Email())
-                ->from($emailAddress)
-                ->to('nathcrea.app@gmail.com') // Remplacez par l'adresse cible
-                ->subject("Message de contact de $name")
-                ->text($message);
+            try {
+                $email = (new Email())
+                    ->from('noreply@votre-domaine.com')
+                    ->replyTo($request->request->get('email')) // Adresse fournie dans le formulaire
+                    ->to('nathcrea.app@gmail.com')
+                    ->subject('Demande de contact')
+                    ->text(sprintf(
+                        "Nom : %s\nEmail : %s\nMessage : %s",
+                        $request->request->get('name') ?? 'Non spécifié',
+                        $request->request->get('email') ?? 'Non spécifié',
+                        $request->request->get('message') ?? 'Non spécifié'
+                    ));
 
-            // Envoi de l'email
-            $mailer->send($email);
-
-            // Ajout d'un message flash pour confirmer l'envoi
-            $this->addFlash('success', 'Votre message a été envoyé avec succès.');
+                $mailer->send($email);
+                $this->addFlash('success', 'Votre demande a bien été envoyée.');
+            } catch (TransportExceptionInterface $e) {
+                // Loggez l'erreur pour analyser le problème
+                $this->addFlash('error', 'Une erreur est survenue lors de l\'envoi.');
+            }
 
             // Redirection pour éviter le renvoi du formulaire
-            return $this->redirectToRoute('app_contact');
+            return $this->redirectToRoute('app_home');
         }
 
         // Rendu de la vue avec le formulaire de contact
