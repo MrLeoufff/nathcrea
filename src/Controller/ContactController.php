@@ -26,7 +26,7 @@ class ContactController extends AbstractController
             // Création de l'email
             try {
                 $email = (new Email())
-                    ->from('noreply@votre-domaine.com')
+                    ->from('nathcrea.app@gmail.com')
                     ->replyTo($request->request->get('email')) // Adresse fournie dans le formulaire
                     ->to('nathcrea.app@gmail.com')
                     ->subject('Demande de contact')

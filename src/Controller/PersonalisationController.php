@@ -39,7 +39,7 @@ class PersonalisationController extends AbstractController
             // Création de l'email
             try {
                 $email = (new Email())
-                    ->from('noreply@votre-domaine.com') // Adresse valide
+                    ->from('nathcrea.app@gmail.com') // Adresse valide
                     ->replyTo($userEmail) // Adresse utilisateur pour répondre
                     ->to('nathcrea.app@gmail.com') // Adresse de destination
                     ->subject('Nouvelle demande de personnalisation')
