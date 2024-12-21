@@ -15,17 +15,26 @@
 					<div class="card-body">
 						<h5 class="card-title">{{ product.name }}</h5>
 						<p class="card-text">{{ product.description }}</p>
-						<p class="card-text">
-							<strong>{{ product.price|number_format(2, ',', ' ') }}
-								€</strong>
-						</p>
+
+						{% if is_granted('ROLE_USER') %}
+							<p class="card-text">
+								<strong>{{ product.price|number_format(2, ',', ' ') }}
+									€</strong>
+							</p>
+						{% else %}
+							<p class="text-danger">Vous devez être connecté pour voir les prix.</p>
+						{% endif %}
+
 						<a href="{{ path('app_product_detail', { id: product.id }) }}" class="btn btn-info">Voir le détail</a>
+
 						{% if app.user %}
 							<a href="{{ path('app_order_product', { id: product.id }) }}" class="btn btn-success">Commander</a>
 						{% endif %}
 					</div>
 				</div>
 			</div>
+		{% else %}
+			<p class="text-muted">Aucun produit disponible dans cette catégorie.</p>
 		{% endfor %}
 	</div>
 {% endblock %}
