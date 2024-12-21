@@ -1,0 +1,42 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Contact
+{% endblock %}
+
+{% block body %}
+	<div class="container py-5">
+		<h1 class="text-center mb-4">Contactez-nous</h1>
+
+		{% if app.flashes('success') %}
+			<div class="alert alert-success">
+				{{ app.flashes('success')|first }}
+			</div>
+		{% endif %}
+
+		<form
+			action="{{ path('app_contact') }}" method="post" class="row g-3">
+			<!-- Nom -->
+			<div class="col-md-6">
+				<label for="name" class="form-label">Nom :</label>
+				<input type="text" id="name" name="name" class="form-control" placeholder="Votre nom" required>
+			</div>
+
+			<!-- Email -->
+			<div class="col-md-6">
+				<label for="email" class="form-label">Email :</label>
+				<input type="email" id="email" name="email" class="form-control" placeholder="Votre email" required>
+			</div>
+
+			<!-- Message -->
+			<div class="col-12">
+				<label for="message" class="form-label">Message :</label>
+				<textarea id="message" name="message" class="form-control" rows="5" placeholder="Votre message..." required></textarea>
+			</div>
+
+			<!-- Bouton Envoyer -->
+			<div class="col-12 text-center">
+				<button type="submit" class="btn btn-primary px-4 py-2">Envoyer</button>
+			</div>
+		</form>
+	</div>
+{% endblock %}

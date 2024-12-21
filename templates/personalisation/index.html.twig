@@ -1,0 +1,59 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Personnalisation
+{% endblock %}
+
+{% block body %}
+	{% for message in app.flashes('error') %}
+		<div class="alert alert-danger">
+			{{ message }}
+		</div>
+	{% endfor %}
+
+	{% for message in app.flashes('success') %}
+		<div class="alert alert-success">
+			{{ message }}
+		</div>
+	{% endfor %}
+	<div class="container py-5">
+		<h1 class="text-center mb-4">Personnalisez vos créations</h1>
+		<form
+			action="{{ path('app_personalisation') }}" method="post" class="row g-3">
+			<!-- Type de produit -->
+			<div class="col-md-6">
+				<label for="type" class="form-label">Type de produit :</label>
+				<select id="type" name="type" class="form-select">
+					<option value="bougie">Bougie</option>
+					<option value="resine">Pièce en résine</option>
+				</select>
+			</div>
+
+			<!-- Taille -->
+			<div class="col-md-6">
+				<label for="size" class="form-label">Taille :</label>
+				<select id="size" name="size" class="form-select">
+					<option value="small">Petite</option>
+					<option value="medium">Moyenne</option>
+					<option value="large">Grande</option>
+				</select>
+			</div>
+
+			<!-- Couleur -->
+			<div class="col-md-6">
+				<label for="color" class="form-label">Couleur :</label>
+				<input type="color" id="color" name="color" class="form-control form-control-color">
+			</div>
+
+			<!-- Notes supplémentaires -->
+			<div class="col-12">
+				<label for="additional_notes" class="form-label">Notes supplémentaires :</label>
+				<textarea id="additional_notes" name="additional_notes" class="form-control" rows="4" placeholder="Ajoutez des précisions sur votre personnalisation..."></textarea>
+			</div>
+
+			<!-- Bouton Valider -->
+			<div class="col-12 text-center">
+				<button type="submit" class="btn btn-primary px-4 py-2">Valider la personnalisation</button>
+			</div>
+		</form>
+	</div>
+{% endblock %}
