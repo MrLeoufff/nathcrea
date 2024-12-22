@@ -330,7 +330,6 @@ html, body {
 
 .social-links {
     display: flex;
-    justify-content: center;
     gap: 1.5rem;
 }
 
@@ -354,4 +353,36 @@ html, body {
 
 .social-icon.instagram:hover {
     color: #C13584; /* Rose d'Instagram */
+}
+
+/* Lien CGV en blanc */
+.footer a.text-decoration-none {
+    color: #FFFFFF !important;
+    transition: color 0.3s ease;
+}
+
+.footer a.text-decoration-none:hover {
+    color: #D4AF37; /* Doré au survol */
+}
+
+
+/* Alignements spécifiques */
+@media (min-width: 992px) {
+    .footer .col-lg-6 {
+        text-align: left;
+    }
+
+    .footer .col-lg-6.text-lg-end {
+        text-align: right;
+    }
+}
+
+@media (max-width: 991px) {
+    .footer .col-lg-6 {
+        text-align: center;
+    }
+
+    .footer .social-links {
+        justify-content: center;
+    }
 }

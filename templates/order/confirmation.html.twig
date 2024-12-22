@@ -8,6 +8,23 @@
 		<h1 class="text-center mb-4">Merci pour votre commande !</h1>
 		<p class="text-center">Votre paiement a été validé avec succès. Voici les détails de votre commande :</p>
 
+		<div class="card mb-4">
+			<div class="card-header">
+				<strong>Informations du client</strong>
+			</div>
+			<div class="card-body">
+				<p>
+					<strong>Nom :</strong>
+					{{ user.firstName }}
+					{{ user.lastName }}</p>
+				<p>
+					<strong>Email :</strong>
+					{{ user.email }}</p>
+				<p>
+					<strong>adresse :</strong>
+					{{ user.address }}</p>
+			</div>
+		</div>
 		<!-- Détails de la commande -->
 		<ul class="list-group mb-4">
 			<li class="list-group-item">

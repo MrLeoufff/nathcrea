@@ -84,9 +84,17 @@ class OrderController extends AbstractController
             throw $this->createNotFoundException("La commande avec l'ID ou la référence {$orderId} est introuvable.");
         }
 
+        $user = $order->getUser();
+
+        if (!$user) {
+            $this->logger->error("Aucun utilisateur associé à la commande avec l'ID ou la référence : {$orderId}");
+            throw $this->createNotFoundException("Aucun utilisateur associé à la commande.");
+        }
+
         return $this->render('order/confirmation.html.twig', [
             'orderNumber' => $order->getOrderNumber(),
             'order' => $order,
+            'user' => $user,
         ]);
     }
 
