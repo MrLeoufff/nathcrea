@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Toutes les catégories
+{% endblock %}
+
+{% block body %}
+	<div class="container py-5">
+		<h1 class="text-center mb-4">Toutes les catégories</h1>
+		<div class="row g-4">
+			{% for category in categories %}
+				<div class="col-md-4">
+					<div class="category-card h-100">
+						<img src="{{ asset('uploads/images/' ~ category.image) }}" alt="{{ category.name }}" class="category-image">
+						<div class="category-info">
+							<h5 class="category-title">{{ category.name }}</h5>
+							<a href="{{ path('app_category_products', { id: category.id }) }}" class="btn btn-primary mt-2">Voir les produits</a>
+						</div>
+					</div>
+				</div>
+			{% endfor %}
+		</div>
+	</div>
+{% endblock %}

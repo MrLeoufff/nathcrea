@@ -58,7 +58,7 @@ class CartController extends AbstractController
 
         $this->cartService->addToCart($product);
 
-        $this->addFlash('success', "Produit ajouté au panier : {$product->getName()}");
+        // $this->addFlash('success', "Produit ajouté au panier : {$product->getName()}");
 
         return $this->redirectToRoute('cart_index');
     }

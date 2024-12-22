@@ -6,6 +6,7 @@ use App\Entity\Category;
 use App\Entity\Product;
 use App\Entity\Review;
 use App\Form\ReviewType;
+use App\Repository\CategoryRepository;
 use App\Repository\ReviewRepository;
 use App\Service\NoXSS;
 use Doctrine\ORM\EntityManagerInterface;
@@ -86,6 +87,16 @@ class HomeController extends AbstractController
         return $this->render('home/category_products.html.twig', [
             'category' => $category,
             'products' => $products,
+        ]);
+    }
+
+    #[Route('/category', name: 'app_category')]
+    public function categories(CategoryRepository $categoryRepository): Response
+    {
+        $categories = $categoryRepository->findAll();
+
+        return $this->render('home/category.html.twig', [
+            'categories' => $categories,
         ]);
     }
 

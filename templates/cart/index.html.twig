@@ -39,6 +39,7 @@
 		<h3>Total :
 			{{ total|number_format(2, ',', ' ') }}
 			€</h3>
+		<a href="{{ path('app_category') }}" class="btn btn-secondary">Continuer les achats</a>
 		<a href="{{ path('cart_clear') }}" class="btn btn-warning">Vider le panier</a>
 		{% if cartItems is not empty %}
 			<a href="{{ path('cart_validate') }}" class="btn btn-success">Valider et payer</a>
