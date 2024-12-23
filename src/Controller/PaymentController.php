@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Service\CartService;
+use App\Service\InvoiceGenerator;
 use App\Service\OrderService;
 use App\Service\PayPalRestService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -15,8 +16,9 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class PaymentController extends AbstractController
 {
-    private PayPalRestService $payPalService;
+    private PayPalRestService $payPalRestService;
     private CartService $cartService;
+    private OrderService $orderService;
 
     private function validateOrderData(array $orderData): void
     {
@@ -111,6 +113,7 @@ class PaymentController extends AbstractController
     public function paymentSuccess(
         Request $request,
         EntityManagerInterface $entityManager,
+        InvoiceGenerator $invoiceGenerator,
         MailerInterface $mailer
     ): Response {
         $orderId = $request->query->get('token');
@@ -141,6 +144,25 @@ class PaymentController extends AbstractController
                 // Nettoyer le panier après paiement réussi
                 $this->cartService->cleanCart();
 
+                $invoiceItems = array_map(function ($item) {
+                    return [
+                        'name' => $item['product']->getName(),
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $item['product']->getPrice(),
+                        'total_price' => $item['quantity'] * $item['product']->getPrice(),
+                    ];
+                }, $cartSummary['items']);
+                $invoicePath = $invoiceGenerator->generateInvoice([
+                    'id' => $order->getId(),
+                    'date' => new \DateTime(),
+                    'customer' => [
+                        'name' => $this->getUser()->getPseudo(),
+                        'email' => $this->getUser()->getEmail(),
+                    ],
+                    'items' => $invoiceItems,
+                    'total' => $order->getTotalAmount(),
+                ]);
+
                 // Envoi de l'email
                 $email = (new TemplatedEmail())
                     ->from('nathcrea.app@gmail.com') // L'expéditeur
@@ -157,7 +179,10 @@ class PaymentController extends AbstractController
                             'items' => $cartSummary['items'],
                             'totalAmount' => $cartSummary['total'],
                         ],
-                    ]);
+                    ])
+                    ->text('Merci pour votre commande. Veuillez trouver votre facture en pièce jointe.')
+                    ->attachFromPath($invoicePath);
+
                 $mailer->send($email);
 
                 $this->addFlash('success', 'Paiement validé avec succès.');

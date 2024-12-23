@@ -15,5 +15,4 @@ class NoXSS
 
         return $purifier->purify($text);
     }
-
 }
