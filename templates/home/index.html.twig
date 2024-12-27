@@ -7,7 +7,7 @@
 	<div
 		class="main-content">
 		<!-- Section de bienvenue -->
-		<section class="welcome-section">
+		<section class="welcome-section mb-4">
 			<div class="container text-center">
 				<h1 class="welcome-title">Bienvenue chez Nath' Crea</h1>
 				<p class="welcome-text">
@@ -16,11 +16,47 @@
 				<a href="#services" class="btn btn-primary">Découvrir nos services</a>
 			</div>
 		</section>
-
+		<section>
+			<h2 class="welcome-title text-center mb-5">Nos Catégories</h2>
+			<div class="row">
+				{% for category in categories %}
+					<div class="col-md-4 mb-4">
+						<div
+							class="category-card">
+							<!-- Carousel pour afficher les produits associés -->
+							<div id="carouselCategory{{ category.id }}" class="carousel slide" data-bs-ride="carousel">
+								<div class="carousel-inner">
+									{% for product in category.products %}
+										<div class="carousel-item {% if loop.first %}active{% endif %}">
+											<img src="{{ asset('uploads/images/' ~ product.image) }}" class="d-block w-100 category-image" alt="{{ product.name }}">
+										</div>
+									{% endfor %}
+								</div>
+								<!-- Contrôles du carousel -->
+								<button class="carousel-control-prev" type="button" data-bs-target="#carouselCategory{{ category.id }}" data-bs-slide="prev">
+									<span class="carousel-control-prev-icon" aria-hidden="true"></span>
+									<span class="visually-hidden">Précédent</span>
+								</button>
+								<button class="carousel-control-next" type="button" data-bs-target="#carouselCategory{{ category.id }}" data-bs-slide="next">
+									<span class="carousel-control-next-icon" aria-hidden="true"></span>
+									<span class="visually-hidden">Suivant</span>
+								</button>
+							</div>
+							<!-- Infos de la catégorie -->
+							<div class="category-info">
+								<h5 class="category-title">{{ category.name }}</h5>
+								<p class="category-description">{{ category.description }}</p>
+								<a href="{{ path('app_category_products', { id: category.id }) }}" class="btn category-btn">Voir les produits</a>
+							</div>
+						</div>
+					</div>
+				{% endfor %}
+			</div>
+		</section>
 		<!-- Section Services -->
 		<section id="services" class="services-section">
 			<div class="container">
-				<h2 class="section-title">Nos Services</h2>
+				<h2 class="welcome-title text-center">Nos Services</h2>
 				<div class="row">
 					<div class="col-md-4 text-center">
 						<div class="service-box">
@@ -46,48 +82,9 @@
 				</div>
 			</div>
 		</section>
-		<section>
-			<h1 class="text-center mb-5">Nos Catégories</h1>
-			<div class="row">
-				{% for category in categories %}
-					<div class="col-md-4 mb-4">
-						<div
-							class="category-card">
-							<!-- Carousel pour afficher les produits associés -->
-							<div id="carouselCategory{{ category.id }}" class="carousel slide" data-bs-ride="carousel">
-								<div class="carousel-inner">
-									{% for product in category.products %}
-										<div class="carousel-item {% if loop.first %}active{% endif %}">
-											<img src="{{ asset('uploads/images/' ~ product.image) }}" class="d-block w-100 category-image" alt="{{ product.name }}">
-										</div>
-									{% endfor %}
-								</div>
-								<!-- Contrôles du carousel -->
-								<button class="carousel-control-prev" type="button" data-bs-target="#carouselCategory{{ category.id }}" data-bs-slide="prev">
-									<span class="carousel-control-prev-icon" aria-hidden="true"></span>
-									<span class="visually-hidden">Précédent</span>
-								</button>
-								<button class="carousel-control-next" type="button" data-bs-target="#carouselCategory{{ category.id }}" data-bs-slide="next">
-									<span class="carousel-control-next-icon" aria-hidden="true"></span>
-									<span class="visually-hidden">Suivant</span>
-								</button>
-							</div>
-
-							<!-- Infos de la catégorie -->
-							<div class="category-info">
-								<h5 class="category-title">{{ category.name }}</h5>
-								<p class="category-description">{{ category.description }}</p>
-								<a href="{{ path('app_category_products', { id: category.id }) }}" class="btn category-btn">Voir les produits</a>
-							</div>
-						</div>
-					</div>
-				{% endfor %}
-			</div>
-		</section>
-
 		<section class="user-reviews py-5 bg-light">
 			<div class="container">
-				<h2 class="text-center mb-5">Avis des utilisateurs</h2>
+				<h2 class="welcome-title text-center mb-5">Avis des utilisateurs</h2>
 				{# Affichage des trois derniers avis triés par date décroissante #}
 				<div class="row justify-content-center">
 					{% for singleReview in reviews | reverse | slice(0, 3) %}
@@ -115,7 +112,6 @@
 						<p class="text-center mt-4">Aucun avis pour le moment.</p>
 					{% endfor %}
 				</div>
-
 				{# Formulaire d'ajout d'avis #}
 				{% if app.user %}
 					<div class="mt-5 mx-auto" style="max-width: 600px;">
