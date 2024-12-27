@@ -76,6 +76,8 @@ class UserController extends AbstractController
         return $this->render('user/edit.html.twig', [
             'user' => $user,
             'form' => $form,
+            'title' => 'Modifier l\'utilisateur',
+            'show_return' => true,
         ]);
     }
 
@@ -89,7 +91,7 @@ class UserController extends AbstractController
             return $this->redirectToRoute('app_user_index');
         }
 
-        if ($this->isCsrfTokenValid('delete' . $user->getId(), $request->getPayload()->getString('_token'))) {
+        if ($this->isCsrfTokenValid('delete' . $user->getId(), $request->request->get('_token'))) {
             $entityManager->remove($user);
             $entityManager->flush();
         }

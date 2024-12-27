@@ -117,7 +117,7 @@ class OrderController extends AbstractController
         $newStatus = $request->request->get('status');
 
         // Valider le statut
-        $validStatuses = ['PENDING', 'PROCESSING', 'SHIPPED', 'COMPLETED'];
+        $validStatuses = ['En attente', 'En cours', 'Envoyé', 'Terminé'];
         if (!in_array($newStatus, $validStatuses)) {
             $this->addFlash('error', 'Statut invalide.');
             return $this->redirectToRoute('app_order_confirmation', ['orderId' => $id]);

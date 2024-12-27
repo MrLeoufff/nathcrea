@@ -20,7 +20,7 @@ class Order
     private ?string $orderNumber = null;
 
     #[ORM\Column(length: 50)]
-    private ?string $status = 'pending';
+    private ?string $status = 'En attente';
 
     #[ORM\Column]
     private ?float $totalAmount = null;

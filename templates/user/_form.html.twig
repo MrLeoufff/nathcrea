@@ -1,16 +1,26 @@
 {{ form_start(form, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
 <div class="row g-3">
 	{% for field in form %}
-		<div class="col-12 {% if field.vars.name in ['email', 'pseudo'] %}col-md-6{% endif %}">
-			{{ form_label(field, null, {'label_attr': {'class': 'form-label'}}) }}
-			{{ form_widget(field, {'attr': {'class': 'form-control'}}) }}
-			{{ form_errors(field) }}
-		</div>
+		{# Debugging: Affichez le nom des champs pour vérifier leurs noms exacts #}
+		{# <p>{{ field.vars.name }}</p> #}
+
+		{# Exclure les champs spécifiques comme _token, roles, password, isVerified #}
+			{% if field.vars.name not in ['_token', 'isVerified'] %}
+				<div class="col-12 {% if field.vars.name in ['email', 'pseudo'] %}col-md-6{% endif %}"> {{ form_label(field, null, {'label_attr': {'class': 'form-label'}}) }}
+				{{ form_widget(field, {
+                    'attr': {
+                        'class': 'form-control',
+                        'placeholder': field.vars.attr.placeholder|default('Entrez ' ~ field.vars.label|lower)
+                    }
+                }) }}
+				{{ form_errors(field) }}
+			</div>
+		{% endif %}
 	{% endfor %}
 </div>
 <div class="text-center mt-4">
 	<button type="submit" class="btn btn-primary">
-		{{ button_label|default('Enregistrer') }}
+		{{ button_label|default('Mettre à jour') }}
 	</button>
 </div>
 {{ form_end(form) }}

@@ -1,23 +1,32 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Modifier l'utilisateur
-{% endblock %}
+{% block title %}
+{{ title|default('Modifier l\'utilisateur') }}{% endblock %}
 
 {% block body %}
 	<div class="container py-4">
-		<h1 class="text-center mb-4">Modifier l'utilisateur</h1>
+		<h1 class="text-center mb-4">{{ title|default('Modifier l\'utilisateur') }}
+</h1>
 
-		<!-- Formulaire de modification -->
-		<div class="card mx-auto shadow-sm p-4" style="max-width: 600px;">
-			{{ include('user/_form.html.twig', {'button_label': 'Mettre à jour'}) }}
+<!-- Formulaire de modification -->
+<div class="card mx-auto shadow-sm p-4" style="max-width: 600px;">
+	{% if form_errors(form) %}
+		<div class="alert alert-danger" role="alert">
+			{{ form_errors(form) }}
 		</div>
+	{% endif %}
+	{{ include('user/_form.html.twig', {'button_label': 'Mettre à jour'}) }}
+</div>
 
-		<!-- Actions -->
-		<div class="text-center mt-4">
-			<a href="{{ path('app_user_index') }}" class="btn btn-secondary me-2">
-				<i class="fas fa-arrow-left me-1"></i>Retour à la liste
-			</a>
-			{{ include('user/_delete_form.html.twig', {'class': 'd-inline'}) }}
-		</div>
-	</div>
-{% endblock %}
+<!-- Actions -->
+<div class="text-center mt-4">
+	<a href="{{ path('app_user_index') }}" class="btn btn-secondary me-2">
+		<i class="fas fa-arrow-left me-1"></i>Retour à la liste
+	</a>
+</div></div><script>
+// Spinner lors de la soumission
+document.querySelector('form').addEventListener('submit', function () {
+const button = this.querySelector('button[type="submit"]');
+button.disabled = true;
+button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Mise à jour...';
+});</script>{% endblock %}
