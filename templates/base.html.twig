@@ -68,13 +68,13 @@
 						<li class="nav-item">
 							<a class="nav-link" href="{{ path('app_contact') }}">Contact</a>
 						</li>
-						<li class="nav-item">
-							<a href="{{ path('cart_index') }}" class="nav-link">
-								Panier
-								<span id="cart-counter">{{ app.session.get('cart')|length }}</span>
-							</a>
-						</li>
 						{% if app.user %}
+							<li class="nav-item">
+								<a href="{{ path('cart_index') }}" class="nav-link">
+									Panier
+									<span id="cart-counter">{{ app.session.get('cart')|length }}</span>
+								</a>
+							</li>
 							<li class="nav-item">
 								<a class="nav-link" href="{{ path('app_orders') }}">Commandes</a>
 							</li>
@@ -165,7 +165,7 @@
 								https://www.nath-crea.fr
 								<br>
 								{# <strong>Numéro SIRET :</strong>
-																																																																						[Si applicable] #}
+																																																																														[Si applicable] #}
 							</p>
 
 							<h6>2. Objet</h6>
@@ -228,7 +228,7 @@
 							</p>
 
 							{# <h6>13. Mentions légales</h6>
-														<p>[Incluez vos mentions légales obligatoires selon votre activité.]</p> #}
+																					<p>[Incluez vos mentions légales obligatoires selon votre activité.]</p> #}
 						</div>
 
 						<!-- Footer de la modale -->

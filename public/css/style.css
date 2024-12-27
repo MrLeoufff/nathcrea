@@ -221,6 +221,33 @@ html, body {
     transform: scale(1.05);
 }
 
+.carousel-item img {
+    height: 200px;
+    object-fit: cover;
+    border-bottom: 2px solid #D4AF37; 
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+    background-color: rgba(0, 0, 0, 0.5); 
+    border-radius: 50%;
+}
+
+.category-card {
+    border: 2px solid #D4AF37;
+    border-radius: 15px;
+    background-color: #FFF;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.category-card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+
 /* Boutons Voir Plus */
 .category-info .btn {
     background-color: #69C9D0;

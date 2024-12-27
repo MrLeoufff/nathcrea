@@ -51,8 +51,29 @@
 			<div class="row">
 				{% for category in categories %}
 					<div class="col-md-4 mb-4">
-						<div class="category-card">
-							<img src="{{ asset('uploads/images/' ~ category.image) }}" class="category-image" alt="{{ category.name }}">
+						<div
+							class="category-card">
+							<!-- Carousel pour afficher les produits associés -->
+							<div id="carouselCategory{{ category.id }}" class="carousel slide" data-bs-ride="carousel">
+								<div class="carousel-inner">
+									{% for product in category.products %}
+										<div class="carousel-item {% if loop.first %}active{% endif %}">
+											<img src="{{ asset('uploads/images/' ~ product.image) }}" class="d-block w-100 category-image" alt="{{ product.name }}">
+										</div>
+									{% endfor %}
+								</div>
+								<!-- Contrôles du carousel -->
+								<button class="carousel-control-prev" type="button" data-bs-target="#carouselCategory{{ category.id }}" data-bs-slide="prev">
+									<span class="carousel-control-prev-icon" aria-hidden="true"></span>
+									<span class="visually-hidden">Précédent</span>
+								</button>
+								<button class="carousel-control-next" type="button" data-bs-target="#carouselCategory{{ category.id }}" data-bs-slide="next">
+									<span class="carousel-control-next-icon" aria-hidden="true"></span>
+									<span class="visually-hidden">Suivant</span>
+								</button>
+							</div>
+
+							<!-- Infos de la catégorie -->
 							<div class="category-info">
 								<h5 class="category-title">{{ category.name }}</h5>
 								<p class="category-description">{{ category.description }}</p>
@@ -63,6 +84,7 @@
 				{% endfor %}
 			</div>
 		</section>
+
 		<section class="user-reviews py-5 bg-light">
 			<div class="container">
 				<h2 class="text-center mb-5">Avis des utilisateurs</h2>
