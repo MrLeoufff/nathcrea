@@ -15,6 +15,10 @@
 					<div class="card-body">
 						<h5 class="card-title">{{ product.name }}</h5>
 						<p class="card-text">{{ product.description }}</p>
+						<p class="card-text">
+							Stock disponible :
+							{{ product.stock }}
+							unités</p>
 
 						{% if is_granted('ROLE_USER') %}
 							<p class="card-text">
