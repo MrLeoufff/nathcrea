@@ -54,16 +54,17 @@ class ForgetMeService
 
     public function deleteUserData(User $user, EntityManagerInterface $entityManager): void
     {
-        // Supprimez les commandes, avis, et tout ce qui est lié à l'utilisateur
         foreach ($user->getOrders() as $order) {
-            $entityManager->remove($order);
+            $order->setUser(null); // Dissociation sans suppression
+            $entityManager->persist($order);
         }
 
         foreach ($user->getReviews() as $review) {
-            $entityManager->remove($review);
+            $review->setUser(null); // Dissociation des avis
+            $entityManager->persist($review);
         }
 
-        $entityManager->remove($user);
+        $entityManager->remove($user); // Suppression uniquement de l'utilisateur
         $entityManager->flush();
     }
 }
