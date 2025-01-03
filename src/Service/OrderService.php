@@ -32,6 +32,15 @@ class OrderService
 
         // Ajoutez les articles du panier à la commande
         foreach ($cartSummary['items'] as $item) {
+            $product = $item['product'];
+            $quantity = $item['quantity'];
+
+            if ($product->getStock() < $quantity) {
+                throw new \InvalidArgumentException('Stock insuffisant pour le produit ' . $product->getName());
+            }
+
+            $product->setStock($product->getStock() - $quantity);
+
             $orderItem = new OrderItem();
             $orderItem->setProduct($item['product']);
             $orderItem->setProductName($item['product']->getName()); // Ajout du nom du produit
