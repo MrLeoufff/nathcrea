@@ -36,10 +36,10 @@
 				{% if is_granted('ROLE_ADMIN') %}
 					<form method="post" action="{{ path('order_update_status', {id: order.id}) }}" class="d-inline-block">
 						<select name="status" class="form-select form-select-sm d-inline-block w-auto">
-							<option value="PENDING" {% if order.status == 'PENDING' %} selected {% endif %}>En attente</option>
-							<option value="PROCESSING" {% if order.status == 'PROCESSING' %} selected {% endif %}>En cours</option>
-							<option value="SHIPPED" {% if order.status == 'SHIPPED' %} selected {% endif %}>Envoyé</option>
-							<option value="COMPLETED" {% if order.status == 'COMPLETED' %} selected {% endif %}>Terminé</option>
+							<option value="En attente" {% if order.status == 'En attente' %} selected {% endif %}>En attente</option>
+							<option value="En cours" {% if order.status == 'En cours' %} selected {% endif %}>En cours</option>
+							<option value="Envoyé" {% if order.status == 'Envoyé' %} selected {% endif %}>Envoyé</option>
+							<option value="Terminé" {% if order.status == 'Terminé' %} selected {% endif %}>Terminé</option>
 						</select>
 						<button class="btn btn-primary btn-sm ms-2" type="submit">Mettre à jour</button>
 					</form>

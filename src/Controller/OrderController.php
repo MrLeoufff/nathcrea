@@ -116,6 +116,9 @@ class OrderController extends AbstractController
         // Récupérer le statut depuis la requête
         $newStatus = $request->request->get('status');
 
+        dump($newStatus);
+        dump($order->getStatus());
+
         // Valider le statut
         $validStatuses = ['En attente', 'En cours', 'Envoyé', 'Terminé'];
         if (!in_array($newStatus, $validStatuses)) {
@@ -124,8 +127,10 @@ class OrderController extends AbstractController
         }
 
         // Mettre à jour le statut de la commande
-        $order->setStatus($newStatus);
-        $entityManager->flush();
+        if ($order->getStatus() !== $newStatus) {
+            $order->setStatus($newStatus);
+            $entityManager->flush();
+        }
 
         $this->addFlash('success', "Le statut de la commande a été mis à jour avec succès.");
         return $this->redirectToRoute('app_order_confirmation', ['orderId' => $id]);
