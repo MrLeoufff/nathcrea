@@ -1,17 +1,56 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}{{ form.vars.value.id ? 'Modifier un produit' : 'Nouveau produit' }}{% endblock %}
+{% block title %}
+	{{ form.vars.value.id ? 'Modifier un produit' : 'Nouveau produit' }}
+{% endblock %}
 
 {% block body %}
-    <h1>{{ form.vars.value.id ? 'Modifier un produit' : 'Nouveau produit' }}</h1>
+	<div class="container py-5">
+		<div class="row justify-content-center">
+			<div class="col-md-8">
+				<div class="card shadow">
+					<div class="card-header bg-warning text-white text-center">
+						<h2>{{ form.vars.value.id ? 'Modifier un produit' : 'Nouveau produit' }}</h2>
+					</div>
+					<div class="card-body">
+						{{ form_start(form, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
 
-    {{ form_start(form) }}
-    {{ form_row(form.name) }}
-    {{ form_row(form.description) }}
-    {{ form_row(form.price) }}
-    {{ form_row(form.stock) }}
-    {{ form_row(form.category) }}
-    {{ form_row(form.imageFile) }}
-    <button class="btn btn-primary">{{ form.vars.value.id ? 'Modifier' : 'Créer' }}</button>
-    {{ form_end(form) }}
+						<div class="mb-3">
+							{{ form_row(form.name, {'attr': {'class': 'form-control', 'placeholder': 'Nom du produit'}}) }}
+						</div>
+
+						<div class="mb-3">
+							{{ form_row(form.description, {'attr': {'class': 'form-control', 'placeholder': 'Description du produit'}}) }}
+						</div>
+
+						<div class="row">
+							<div class="col-md-6 mb-3">
+								{{ form_row(form.price, {'attr': {'class': 'form-control', 'placeholder': 'Prix'}}) }}
+							</div>
+							<div class="col-md-6 mb-3">
+								{{ form_row(form.stock, {'attr': {'class': 'form-control', 'placeholder': 'Stock'}}) }}
+							</div>
+						</div>
+
+						<div class="mb-3">
+							{{ form_row(form.category, {'attr': {'class': 'form-select'}}) }}
+						</div>
+
+						<div class="mb-3">
+							{{ form_row(form.imageFile, {'attr': {'class': 'form-control'}}) }}
+						</div>
+
+						<div class="d-grid gap-2">
+							<button class="btn btn-warning text-white">
+								<i class="fas fa-edit"></i>
+								Modifier
+							</button>
+						</div>
+
+						{{ form_end(form) }}
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 {% endblock %}

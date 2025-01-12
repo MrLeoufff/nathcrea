@@ -1,14 +1,43 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}{{ form.vars.value.id ? 'Modifier une catégorie' : 'Nouvelle catégorie' }}{% endblock %}
+{% block title %}
+	{{ form.vars.value.id ? 'Modifier une catégorie' : 'Nouvelle catégorie' }}
+{% endblock %}
 
 {% block body %}
-    <h1>{{ form.vars.value.id ? 'Modifier une catégorie' : 'Nouvelle catégorie' }}</h1>
+	<div class="container py-5">
+		<div class="row justify-content-center">
+			<div class="col-md-8">
+				<div class="card shadow">
+					<div class="card-header bg-warning text-white text-center">
+						<h2>{{ form.vars.value.id ? 'Modifier une catégorie' : 'Nouvelle catégorie' }}</h2>
+					</div>
+					<div class="card-body">
+						{{ form_start(form, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
 
-    {{ form_start(form) }}
-    {{ form_row(form.name) }}
-    {{ form_row(form.description) }}
-    {{ form_row(form.imageFile) }}
-    <button class="btn btn-primary">{{ form.vars.value.id ? 'Modifier' : 'Créer' }}</button>
-    {{ form_end(form) }}
+						<div class="mb-3">
+							{{ form_row(form.name, {'attr': {'class': 'form-control', 'placeholder': 'Nom de la catégorie'}}) }}
+						</div>
+
+						<div class="mb-3">
+							{{ form_row(form.description, {'attr': {'class': 'form-control', 'placeholder': 'Description de la catégorie'}}) }}
+						</div>
+
+						<div class="mb-3">
+							{{ form_row(form.imageFile, {'attr': {'class': 'form-control'}}) }}
+						</div>
+
+						<div class="d-grid gap-2">
+							<button class="btn btn-warning text-white">
+								<i class="fas fa-edit"></i>
+								Modifier
+							</button>
+						</div>
+
+						{{ form_end(form) }}
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 {% endblock %}
