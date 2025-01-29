@@ -38,6 +38,7 @@ security:
         - { path: ^/admin, roles: ROLE_ADMIN }
         - { path: ^/client, roles: ROLE_USER }
         - { path: ^/public, roles: ROLE_VISITOR }
+        - { path: ^/webhook/paypal, roles: IS_AUTHENTICATED_ANONYMOUSLY }
     role_hierarchy:
         ROLE_ADMIN: [ ROLE_USER, ROLE_VISITOR ]
 
