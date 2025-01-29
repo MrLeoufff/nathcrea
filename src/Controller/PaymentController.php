@@ -96,7 +96,6 @@ class PaymentController extends AbstractController
 
         try {
             $response = $this->payPalRestService->createOrder($orderData);
-            dump($response);
 
             if (isset($response['id'])) {
                 $orderId = $response['id'];
@@ -166,7 +165,7 @@ class PaymentController extends AbstractController
                 );
 
                 // Mise à jour du statut de la commande
-                $order->setStatus('completed');
+                $order->setStatus('COMPLETED');
                 $entityManager->flush();
 
                 // Nettoyer le panier après paiement réussi
