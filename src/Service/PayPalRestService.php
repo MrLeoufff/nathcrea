@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Service;
 
 use Psr\Log\LoggerInterface;
@@ -19,11 +18,11 @@ class PayPalRestService
 
     public function __construct(HttpClientInterface $client, string $clientId, string $clientSecret, LoggerInterface $logger, string $mode = 'sandbox')
     {
-        $this->client = $client;
-        $this->clientId = $clientId;
+        $this->client       = $client;
+        $this->clientId     = $clientId;
         $this->clientSecret = $clientSecret;
-        $this->logger = $logger;
-        $this->baseUri = rtrim($mode === 'live'
+        $this->logger       = $logger;
+        $this->baseUri      = rtrim($mode === 'live'
             ? 'https://api-m.paypal.com/'
             : 'https://api-m.sandbox.paypal.com/', '/');
     }
@@ -32,15 +31,16 @@ class PayPalRestService
     {
         try {
             $response = $this->client->request('POST', "{$this->baseUri}/v1/oauth2/token", [
-                'auth_basic' => [$this->clientId, $this->clientSecret],
-                'body' => [
-                    'grant_type' => 'client_credentials',
+                'headers' => [
+                    'Authorization' => 'Basic ' . base64_encode("{$this->clientId}:{$this->clientSecret}"),
+                    'Content-Type'  => 'application/x-www-form-urlencoded',
                 ],
+                'body'    => 'grant_type=client_credentials',
             ]);
 
             $data = $response->toArray();
 
-            if (!isset($data['access_token'])) {
+            if (! isset($data['access_token'])) {
                 throw new \RuntimeException('Impossible de récupérer un token PayPal.');
             }
 
@@ -59,9 +59,9 @@ class PayPalRestService
             $response = $this->client->request('POST', "{$this->baseUri}/v2/checkout/orders", [
                 'headers' => [
                     'Authorization' => "Bearer $accessToken",
-                    'Content-Type' => 'application/json',
+                    'Content-Type'  => 'application/json',
                 ],
-                'json' => $orderData,
+                'json'    => $orderData,
             ]);
 
             return $response->toArray();
@@ -81,7 +81,7 @@ class PayPalRestService
             $response = $this->client->request('POST', "{$this->baseUri}/v2/checkout/orders/{$orderId}/capture", [
                 'headers' => [
                     'Authorization' => "Bearer {$this->getAccessToken()}",
-                    'Content-Type' => 'application/json',
+                    'Content-Type'  => 'application/json',
                 ],
             ]);
 
@@ -93,6 +93,24 @@ class PayPalRestService
         } catch (\Exception $e) {
             $this->logger->error('Erreur inattendue lors de la capture de la commande PayPal : ' . $e->getMessage());
             throw new \RuntimeException('Erreur lors de la capture de la commande PayPal.');
+        }
+    }
+
+    public function getOrderStatus(string $orderId): string
+    {
+        try {
+            $response = $this->client->request('GET', "{$this->baseUri}/v2/checkout/orders/{$orderId}", [
+                'headers' => [
+                    'Authorization' => "Bearer {$this->getAccessToken()}",
+                    'Content-Type'  => 'application/json',
+                ],
+            ]);
+
+            $orderDetails = $response->toArray();
+            return $orderDetails['status'] ?? 'UNKNOWN';
+        } catch (\Exception $e) {
+            $this->logger->error('Erreur lors de la récupération du statut de la commande PayPal : ' . $e->getMessage());
+            throw new \RuntimeException('Impossible de récupérer le statut de la commande PayPal.');
         }
     }
 }

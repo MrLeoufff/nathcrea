@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Controller;
 
 use App\Service\CartService;
@@ -23,31 +22,31 @@ class PaymentController extends AbstractController
     private function validateOrderData(array $orderData): void
     {
         // Vérifier si le champ 'intent' est valide
-        if (!isset($orderData['intent']) || !in_array($orderData['intent'], ['CAPTURE', 'AUTHORIZE'], true)) {
+        if (! isset($orderData['intent']) || ! in_array($orderData['intent'], ['CAPTURE', 'AUTHORIZE'], true)) {
             throw new \InvalidArgumentException('Le champ "intent" est invalide ou manquant.');
         }
 
         // Vérifier les unités d'achat
-        if (!isset($orderData['purchase_units']) || !is_array($orderData['purchase_units']) || empty($orderData['purchase_units'])) {
+        if (! isset($orderData['purchase_units']) || ! is_array($orderData['purchase_units']) || empty($orderData['purchase_units'])) {
             throw new \InvalidArgumentException('Le champ "purchase_units" est invalide ou manquant.');
         }
 
         foreach ($orderData['purchase_units'] as $unit) {
-            if (!isset($unit['description']) || empty($unit['description'])) {
+            if (! isset($unit['description']) || empty($unit['description'])) {
                 throw new \InvalidArgumentException('La description de l\'unité d\'achat est manquante.');
             }
 
-            if (!isset($unit['amount']['currency_code']) || empty($unit['amount']['currency_code'])) {
+            if (! isset($unit['amount']['currency_code']) || empty($unit['amount']['currency_code'])) {
                 throw new \InvalidArgumentException('Le champ "currency_code" est manquant.');
             }
 
-            if (!isset($unit['amount']['value']) || !is_numeric($unit['amount']['value']) || $unit['amount']['value'] <= 0) {
+            if (! isset($unit['amount']['value']) || ! is_numeric($unit['amount']['value']) || $unit['amount']['value'] <= 0) {
                 throw new \InvalidArgumentException('Le montant de l\'unité d\'achat est invalide.');
             }
         }
 
         // Vérifier les URLs
-        if (!isset($orderData['application_context']['cancel_url']) || !isset($orderData['application_context']['return_url'])) {
+        if (! isset($orderData['application_context']['cancel_url']) || ! isset($orderData['application_context']['return_url'])) {
             throw new \InvalidArgumentException('Les URLs de retour ou d\'annulation sont manquantes.');
         }
     }
@@ -55,8 +54,8 @@ class PaymentController extends AbstractController
     public function __construct(PayPalRestService $payPalRestService, CartService $cartService, OrderService $orderService)
     {
         $this->payPalRestService = $payPalRestService;
-        $this->cartService = $cartService;
-        $this->orderService = $orderService;
+        $this->cartService       = $cartService;
+        $this->orderService      = $orderService;
     }
 
     #[Route('/payment', name: 'app_payment')]
@@ -65,26 +64,26 @@ class PaymentController extends AbstractController
         $cartSummary = $this->cartService->getCartSummary($entityManager);
 
         $orderData = [
-            'intent' => 'CAPTURE',
-            'purchase_units' => [[
+            'intent'              => 'CAPTURE',
+            'purchase_units'      => [[
                 'description' => 'Votre panier',
-                'amount' => [
+                'amount'      => [
                     'currency_code' => 'EUR',
-                    'value' => number_format($cartSummary['total'], 2, '.', ''),
-                    'breakdown' => [
+                    'value'         => number_format($cartSummary['total'], 2, '.', ''),
+                    'breakdown'     => [
                         'item_total' => [
                             'currency_code' => 'EUR',
-                            'value' => number_format($cartSummary['total'], 2, '.', ''), // Utilisation correcte
+                            'value'         => number_format($cartSummary['total'], 2, '.', ''), // Utilisation correcte
                         ],
                     ],
                 ],
-                'items' => array_map(function ($item) {
+                'items'       => array_map(function ($item) {
                     return [
-                        'name' => $item['product']->getName(),
-                        'quantity' => $item['quantity'],
+                        'name'        => $item['product']->getName(),
+                        'quantity'    => $item['quantity'],
                         'unit_amount' => [
                             'currency_code' => 'EUR',
-                            'value' => number_format($item['unit_price'], 2, '.', ''), // Correction ici
+                            'value'         => number_format($item['unit_price'], 2, '.', ''), // Correction ici
                         ],
                     ];
                 }, $cartSummary['items']),
@@ -100,7 +99,21 @@ class PaymentController extends AbstractController
 
             if (isset($response['id'])) {
                 $orderId = $response['id'];
-                return $this->redirect("https://www.sandbox.paypal.com/checkoutnow?token=$orderId");
+
+                // Vérification du statut de la commande avant redirection
+                $status = $this->payPalRestService->getOrderStatus($orderId);
+                if ($status !== 'CREATED') {
+                    throw new \RuntimeException("Erreur : la commande PayPal n'est pas dans un état valide.");
+                }
+
+                // Trouver le lien de redirection vers PayPal
+                foreach ($response['links'] as $link) {
+                    if ($link['rel'] === 'approve') {
+                        return $this->redirect($link['href']);
+                    }
+                }
+
+                throw new \RuntimeException('Aucun lien de redirection PayPal trouvé.');
             }
         } catch (\Exception $e) {
             $this->addFlash('error', 'Erreur PayPal : ' . $e->getMessage());
@@ -108,6 +121,20 @@ class PaymentController extends AbstractController
 
         return $this->redirectToRoute('cart_index');
     }
+
+    //     try {
+    //         $response = $this->payPalRestService->createOrder($orderData);
+
+    //         if (isset($response['id'])) {
+    //             $orderId = $response['id'];
+    //             return $this->redirect("https://www.sandbox.paypal.com/checkoutnow?token=$orderId");
+    //         }
+    //     } catch (\Exception $e) {
+    //         $this->addFlash('error', 'Erreur PayPal : ' . $e->getMessage());
+    //     }
+
+    //     return $this->redirectToRoute('cart_index');
+    // }
 
     #[Route('/payment/success', name: 'cart_payment_success')]
     public function paymentSuccess(
@@ -118,7 +145,7 @@ class PaymentController extends AbstractController
     ): Response {
         $orderId = $request->query->get('token');
 
-        if (!$orderId) {
+        if (! $orderId) {
             $this->addFlash('error', 'Identifiant de commande introuvable.');
             return $this->redirectToRoute('cart_index');
         }
@@ -146,37 +173,37 @@ class PaymentController extends AbstractController
 
                 $invoiceItems = array_map(function ($item) {
                     return [
-                        'name' => $item['product']->getName(),
-                        'quantity' => $item['quantity'],
-                        'unit_price' => $item['product']->getPrice(),
+                        'name'        => $item['product']->getName(),
+                        'quantity'    => $item['quantity'],
+                        'unit_price'  => $item['product']->getPrice(),
                         'total_price' => $item['quantity'] * $item['product']->getPrice(),
                     ];
                 }, $cartSummary['items']);
                 $invoicePath = $invoiceGenerator->generateInvoice([
-                    'id' => $order->getId(),
-                    'date' => new \DateTime(),
+                    'id'       => $order->getId(),
+                    'date'     => new \DateTime(),
                     'customer' => [
-                        'name' => $this->getUser()->getPseudo(),
+                        'name'  => $this->getUser()->getPseudo(),
                         'email' => $this->getUser()->getEmail(),
                     ],
-                    'items' => $invoiceItems,
-                    'total' => $order->getTotalAmount(),
+                    'items'    => $invoiceItems,
+                    'total'    => $order->getTotalAmount(),
                 ]);
 
                 // Envoi de l'email
                 $email = (new TemplatedEmail())
-                    ->from('nathcrea.app@gmail.com') // L'expéditeur
-                    ->to($this->getUser()->getEmail()) // Le destinataire
-                    ->subject('Confirmation de votre commande') // Sujet de l'email
+                    ->from('nathcrea.app@gmail.com')                      // L'expéditeur
+                    ->to($this->getUser()->getEmail())                    // Le destinataire
+                    ->subject('Confirmation de votre commande')           // Sujet de l'email
                     ->htmlTemplate('emails/order_confirmation.html.twig') // Le fichier Twig pour le contenu HTML
                     ->context([
-                        'user' => [
+                        'user'  => [
                             'firstName' => $this->getUser()->getFirstName(),
-                            'lastName' => $this->getUser()->getLastName(),
-                            'address' => $this->getUser()->getAddress(),
+                            'lastName'  => $this->getUser()->getLastName(),
+                            'address'   => $this->getUser()->getAddress(),
                         ],
                         'order' => [
-                            'items' => $cartSummary['items'],
+                            'items'       => $cartSummary['items'],
                             'totalAmount' => $cartSummary['total'],
                         ],
                     ])
