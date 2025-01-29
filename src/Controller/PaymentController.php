@@ -96,6 +96,7 @@ class PaymentController extends AbstractController
 
         try {
             $response = $this->payPalRestService->createOrder($orderData);
+            dump($response);
 
             if (isset($response['id'])) {
                 $orderId = $response['id'];
