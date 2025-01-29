@@ -23,46 +23,67 @@ class PayPalWebhookController extends AbstractController
     #[Route('/webhook/paypal', name: 'paypal_webhook', methods: ['POST'])]
     public function handleWebhook(Request $request): Response
     {
-        $data = json_decode($request->getContent(), true);
-        $this->logger->info('Webhook PayPal reçu :', $data);
+        // 🟢 1️⃣ Vérifier si la requête arrive bien sur le serveur
+        $this->logger->info('🚀 Webhook PayPal reçu avec cette requête brute : ' . $request->getContent());
 
-        if (! isset($data['event_type']) || ! isset($data['resource'])) {
-            return new Response('Données invalides', Response::HTTP_BAD_REQUEST);
-        }
+        // 🟢 2️⃣ Vérifier si le JSON est valide
+        $data     = json_decode($request->getContent(), true);
+        $response = new Response('Webhook reçu', Response::HTTP_OK);
 
-        $eventType = $data['event_type'];
-        $resource  = $data['resource'];
+        if (! $data) {
+            $this->logger->error('❌ Webhook PayPal reçu mais JSON invalide.');
+            $response->setContent('Invalid JSON');
+            $response->setStatusCode(Response::HTTP_BAD_REQUEST);
+        } elseif (! isset($data['event_type']) || ! isset($data['resource'])) {
+            $this->logger->error('❌ Données invalides dans le webhook PayPal : ', $data);
+            $response->setContent('Données invalides');
+            $response->setStatusCode(Response::HTTP_BAD_REQUEST);
+        } else {
+            // 🟢 3️⃣ Log du type d'événement reçu
+            $eventType = $data['event_type'];
+            $resource  = $data['resource'];
+            $this->logger->info("📌 Type d'événement reçu : " . $eventType);
 
-        switch ($eventType) {
-            case 'CHECKOUT.ORDER.APPROVED':
-                $this->logger->info("Commande PayPal approuvée : " . $resource['id']);
-                break;
+            // 🟢 4️⃣ Vérifier que `resource['id']` est bien présent
+            if (! isset($resource['id'])) {
+                $this->logger->error("❌ L'événement PayPal $eventType ne contient pas d'ID de commande.");
+                $response->setContent('Invalid event structure');
+                $response->setStatusCode(Response::HTTP_BAD_REQUEST);
+            } else {
+                switch ($eventType) {
+                    case 'CHECKOUT.ORDER.APPROVED':
+                        $this->logger->info("✅ Commande PayPal approuvée : " . $resource['id']);
+                        break;
 
-            case 'CHECKOUT.ORDER.COMPLETED':
-            case 'PAYMENT.CAPTURE.COMPLETED':
-                $this->logger->info("Paiement complété pour la commande PayPal : " . $resource['id']);
+                    case 'CHECKOUT.ORDER.COMPLETED':
+                    case 'PAYMENT.CAPTURE.COMPLETED':
+                        $this->logger->info("✅ Paiement complété pour la commande PayPal : " . $resource['id']);
 
-                // Mettre à jour la commande en base de données
-                $order = $this->entityManager->getRepository(Order::class)->findOneBy(['paypalOrderId' => $resource['id']]);
-                if ($order) {
-                    $order->setStatus('completed');
-                    $this->entityManager->flush();
-                    $this->logger->info("Statut de la commande mis à jour en 'completed'.");
+                        // 🔴 Vérifier si la commande existe en base
+                        $order = $this->entityManager->getRepository(Order::class)->findOneBy(['paypalOrderId' => $resource['id']]);
+                        if ($order) {
+                            $order->setStatus('completed');
+                            $this->entityManager->flush();
+                            $this->logger->info("✅ Statut de la commande mis à jour en 'completed'.");
+                        } else {
+                            $this->logger->error("❌ Commande introuvable pour PayPalOrderID : " . $resource['id']);
+                        }
+                        break;
+
+                    case 'PAYMENT.CAPTURE.DENIED':
+                        $this->logger->error("⚠️ Paiement refusé pour la commande PayPal : " . $resource['id']);
+                        break;
+
+                    case 'PAYMENT.CAPTURE.REFUNDED':
+                        $this->logger->info("ℹ️ Paiement remboursé pour la commande PayPal : " . $resource['id']);
+                        break;
+
+                    default:
+                        $this->logger->warning("❓ Événement PayPal non géré : " . $eventType);
                 }
-                break;
-
-            case 'PAYMENT.CAPTURE.DENIED':
-                $this->logger->error("Paiement refusé pour la commande PayPal : " . $resource['id']);
-                break;
-
-            case 'PAYMENT.CAPTURE.REFUNDED':
-                $this->logger->info("Paiement remboursé pour la commande PayPal : " . $resource['id']);
-                break;
-
-            default:
-                $this->logger->warning("Événement PayPal non géré : " . $eventType);
+            }
         }
 
-        return new Response('Webhook reçu', Response::HTTP_OK);
+        return $response;
     }
 }
