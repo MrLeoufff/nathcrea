@@ -8,6 +8,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class PayPalWebhookController extends AbstractController
 {
@@ -21,6 +22,7 @@ class PayPalWebhookController extends AbstractController
     }
 
     #[Route('/webhook/paypal', name: 'paypal_webhook', methods: ['POST'])]
+    #[IsGranted('PUBLIC_ACCESS')]
     public function handleWebhook(Request $request): Response
     {
         // 🟢 1️⃣ Vérifier si la requête arrive bien sur le serveur
