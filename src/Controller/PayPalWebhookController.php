@@ -23,18 +23,20 @@ class PayPalWebhookController extends AbstractController
 
     #[Route('/webhook/paypal', name: 'paypal_webhook', methods: ['POST'])]
     #[IsGranted('PUBLIC_ACCESS')]
-    public function handleWebhook(Request $request, LoggerInterface $logger): Response
+    public function handleWebhook(Request $request): Response
     {
-
         // 🟢 1️⃣ Vérifier si la requête arrive bien sur le serveur
         $this->logger->info('🚀 Webhook PayPal reçu avec cette requête brute : ' . $request->getContent());
 
         // 🟢 2️⃣ Vérifier si le JSON est valide
         $data = json_decode($request->getContent(), true);
-        $logger->info('Webhook PayPal reçu : ' . json_encode($data));
-
-        if (! is_array($data)) {
-            return new Response('Données invalides : ' . $request->getContent(), Response::HTTP_BAD_REQUEST);
+        if (! $data) {
+            $this->logger->error('❌ JSON invalide : ' . $request->getContent());
+            return new Response('Invalid JSON', Response::HTTP_BAD_REQUEST);
+        }
+        if (! isset($data['event_type']) || ! isset($data['resource'])) {
+            $this->logger->error('❌ Webhook reçu mais données invalides : ' . json_encode($data));
+            return new Response('Données invalides', Response::HTTP_BAD_REQUEST);
         }
 
         $response = new Response('Webhook reçu', Response::HTTP_OK);
