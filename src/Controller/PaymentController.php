@@ -63,6 +63,8 @@ class PaymentController extends AbstractController
     {
         $cartSummary = $this->cartService->getCartSummary($entityManager);
 
+        $this->container->get('logger')->info("🔍 Test log Symfony prod");
+
         $orderData = [
             'intent'              => 'CAPTURE',
             'purchase_units'      => [[
